@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhi Studios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/docx"></script>
+
+    <style>
+    /* ── TOKENS ── */
+    :root {
+        --ink:      #0f0f0f;
+        --ink-2:    #3a3a3a;
+        --ink-3:    #767676;
+        --ink-4:    #b0b0b0;
+        --surface:  #ffffff;
+        --surface-2:#f6f6f4;
+        --surface-3:#eeede9;
+        --accent:   #3b3bd4;
+        --accent-h: #2828b8;
+        --accent-bg:#eeeeff;
+        --danger:   #d93025;
+        --warn:     #e07b00;
+        --success:  #1a7f4b;
+        --radius:   10px;
+        --nav-h:    60px;
+    }
+    [data-theme="dark"] {
+        --ink:#f0f0f0; --ink-2:#c0c0c0; --ink-3:#888; --ink-4:#555;
+        --surface:#111113; --surface-2:#18181b; --surface-3:#222226; --accent-bg:#1a1a40;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;background:var(--surface-2);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;transition:background .25s,color .25s;}
+
+    /* ── SHARED MOTION ── */
+    @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes rowRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes rowFadeOnly{from{opacity:0}to{opacity:1}}
+    @keyframes fabPop{from{opacity:0;transform:scale(.5) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+    /* ── NAV ── */
+    .nav{position:sticky;top:0;z-index:200;background:var(--surface);border-bottom:1px solid var(--surface-3);height:var(--nav-h);display:flex;align-items:center;padding:0 32px;gap:16px;}
+    .nav-logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink);text-decoration:none;flex-shrink:0;}
+    .nav-logo span{color:var(--accent);}
+    .nav-badge{font-size:11px;font-weight:600;background:var(--accent);color:#fff;padding:2px 8px;border-radius:20px;letter-spacing:.4px;display:none;}
+    .nav-spacer{flex:1;}
+    .nav-icon-btn{background:none;border:none;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;font-size:16px;transition:background .15s,color .15s;position:relative;}
+    .nav-icon-btn:hover{background:var(--surface-2);color:var(--ink);}
+    .nav-icon-btn i{display:inline-block;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+    .nav-icon-btn.open i{transform:rotate(75deg);}
+    .nav-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--radius);min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.10);overflow:hidden;display:none;z-index:300;}
+    .nav-dropdown.open{display:block;animation:popIn .15s ease;}
+    @keyframes popIn{from{opacity:0;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes shakeModal{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+    .nav-dropdown button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;background:none;border:none;text-align:left;font-size:14px;color:var(--ink-2);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s;}
+    .nav-dropdown button:hover{background:var(--surface-2);}
+    .nav-dropdown button.danger{color:var(--danger);}
+    .nav-divider{height:1px;background:var(--surface-3);}
+
+    /* ── TOAST ── */
+    #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--surface);font-size:13px;font-weight:500;padding:10px 20px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1);z-index:9999;white-space:nowrap;}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+    /* ── SCREENS ── */
+    .screen{display:none;}.screen.active{display:block;animation:screenIn .4s cubic-bezier(.16,1,.3,1);}
+
+    /* ── LIBRARY ── */
+    #libraryScreen{padding:40px 32px 80px;max-width:1100px;margin:0 auto;}
+    .library-header{margin-bottom:20px;}
+    .library-header h1{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;margin-bottom:4px;}
+    .library-header p{font-size:14px;color:var(--ink-3);}
+    .library-search{position:relative;margin-bottom:24px;}
+    .library-search i.fa-search{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--ink-4);font-size:14px;pointer-events:none;}
+    .library-search input{width:100%;padding:13px 44px 13px 42px;border:1.5px solid var(--surface-3);border-radius:12px;font-size:15px;font-family:'Inter',sans-serif;color:var(--ink);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;}
+    .library-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+    .library-search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:var(--surface-2);border:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;font-size:11px;transition:background .15s,transform .12s ease;}
+    .library-search-clear:hover{background:var(--surface-3);}
+    .library-search-clear:active{transform:translateY(-50%) scale(.9);}
+    .empty-state{text-align:center;padding:80px 20px;color:var(--ink-4);}
+    .empty-state i{font-size:40px;margin-bottom:16px;display:block;animation:iconFloat 3s ease-in-out infinite;}
+    .empty-state h3{font-size:18px;color:var(--ink-3);margin-bottom:6px;font-weight:500;}
+    .empty-state p{font-size:14px;}
+    .genre-section{margin-bottom:48px;}
+    .genre-header{display:flex;align-items:baseline;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--surface-3);}
+    .genre-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;}
+    .genre-desc{font-size:13px;color:var(--ink-3);}
+    .books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;}
+    .book-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:12px;padding:22px 20px;cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s;animation:rowRise .35s ease backwards;}
+    .book-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.09);transform:translateY(-3px);border-color:var(--accent);}
+    .book-card:active{transform:translateY(-1px) scale(.99);}
+    .book-card-title{font-weight:600;font-size:15px;margin-bottom:4px;line-height:1.3;}
+    .book-card-size{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+    .book-card-desc{font-size:12px;color:var(--ink-3);margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+    .book-card-chapters{border-top:1px solid var(--surface-3);padding-top:10px;margin-top:4px;}
+    .book-card-chapter{font-size:11px;color:var(--accent);padding:3px 0;display:flex;align-items:center;gap:5px;}
+    .book-card-no-chapters{font-size:11px;color:var(--ink-4);font-style:italic;}
+
+    /* ── BOOK SCREEN ── */
+    #bookScreen{padding:40px 32px 80px;max-width:780px;margin:0 auto;}
+    .back-btn{background:none;border:none;color:var(--ink-3);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:6px 0;margin-bottom:28px;font-family:'Inter',sans-serif;transition:color .15s,transform .15s ease;}
+    .back-btn:hover{color:var(--ink);transform:translateX(-3px);}
+    .book-screen-title{font-family:'Playfair Display',serif;font-size:30px;margin-bottom:6px;}
+    .book-screen-size-badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--accent);background:var(--accent-bg);padding:3px 10px;border-radius:20px;margin-bottom:12px;}
+    .book-screen-summary{font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--surface-3);}
+    .chapters-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px;}
+    .chapter-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--radius);margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s ease;animation:rowRise .35s ease backwards;}
+    .chapter-row:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-2px);}
+    .chapter-row:active{transform:translateY(-1px) scale(.99);}
+    .chapter-row-name{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;}
+    .chapter-row-name i{color:var(--accent);font-size:13px;}
+    .chapter-open-btn{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .15s,transform .12s ease;}
+    .chapter-open-btn:hover{background:#d8d8ff;transform:translateY(-1px);}
+    .chapter-open-btn:active{transform:scale(.95);}
+
+    /* ══════════════════════════════════════════════════
+       PAGE READER — the big new section
+    ══════════════════════════════════════════════════ */
+    #readerScreen{display:none;position:fixed;inset:0;z-index:400;background:#2c2c2c;overflow:hidden;flex-direction:column;}
+    #readerScreen.open{display:flex;}
+
+    /* Top bar */
+    .reader-topbar{background:#1a1a1a;padding:0 20px;height:50px;display:flex;align-items:center;gap:12px;flex-shrink:0;z-index:10;}
+    .reader-close-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s,transform .12s ease;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+    .reader-close-btn:hover{background:rgba(255,255,255,.16);}
+    .reader-close-btn:active{transform:scale(.95);}
+    .reader-chapter-title{color:rgba(255,255,255,.6);font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+    /* Page navigation bar */
+    .reader-nav-bar{background:#1a1a1a;border-top:1px solid rgba(255,255,255,.07);padding:0 20px;height:46px;display:flex;align-items:center;justify-content:center;gap:16px;flex-shrink:0;}
+    .page-nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;width:32px;height:32px;border-radius:7px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s ease;}
+    .page-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.18);}
+    .page-nav-btn:active:not(:disabled){transform:scale(.88);}
+    .page-nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+    .page-counter{font-size:12px;color:rgba(255,255,255,.55);font-weight:500;min-width:80px;text-align:center;}
+
+    /* Scrollable viewport that holds the page. touch-action:pan-y keeps native
+       single-finger scroll but stops the browser from hijacking our 2-finger
+       pinch (we handle that ourselves so everyone can zoom the page). */
+    .reader-viewport{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;position:relative;touch-action:pan-y;}
+
+    /* Stage carries the fit-to-screen + user zoom scale and the 3D depth
+       context. The .book-page inside it is the piece that actually flips. */
+    .book-page-stage{flex-shrink:0;perspective:1800px;-webkit-perspective:1800px;}
+
+    /* THE PAGE — dimensions controlled by JS based on pageSize setting */
+    .book-page{
+        background:#fff;
+        color:#111;
+        box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
+        border-radius:2px;
+        overflow:hidden;
+        position:relative;
+        width:100%;
+        height:100%;
+        backface-visibility:hidden;
+        -webkit-backface-visibility:hidden;
+        /* width/height set by JS on the stage */
+    }
+
+    /* Page content inner scroll (clips overflow on the page itself) */
+    .book-page-content{
+        position:absolute;
+        inset:0;
+        overflow:hidden;
+        padding:var(--page-padding, 60px 64px);
+        font-family:'Lora',Georgia,serif;
+        font-size:var(--page-font-size, 15px);
+        line-height:1.82;
+        color:#1a1a1a;
+        word-wrap:break-word;
+    }
+    .book-page-content p{margin-bottom:.9em;text-align:justify;}
+    .book-page-content h1,.book-page-content h2,.book-page-content h3{font-family:'Playfair Display',serif;margin:1.2em 0 .5em;line-height:1.2;}
+    .book-page-content h1{font-size:1.6em;}
+    .book-page-content h2{font-size:1.3em;}
+    .book-page-content h3{font-size:1.1em;}
+    .book-page-content ul,.book-page-content ol{padding-left:1.4em;margin-bottom:.8em;}
+    .book-page-content li{margin-bottom:.3em;}
+    .book-page-content strong{font-weight:600;}
+    .book-page-content em{font-style:italic;}
+    .book-page-content img{max-width:100%;height:auto;display:block;margin:.8em auto;}
+    .book-page-content table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.9em;}
+    .book-page-content td,.book-page-content th{border:1px solid #ddd;padding:6px 8px;}
+
+    /* Page number at bottom of page */
+    .book-page-num{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:11px;color:#aaa;font-family:'Inter',sans-serif;letter-spacing:.5px;}
+
+    /* Real page-turn: the old page rotates away around its hinge edge, then
+       the new page rotates in from the same hinge — a genuine 3D flip rather
+       than a slide. Next flips like a real forward page-turn (hinged left);
+       Prev mirrors it (hinged right). Slightly past 90deg so it fully
+       disappears edge-on with no stray sliver. */
+    @keyframes pageFadeIn{from{opacity:0;transform:rotateY(0deg) translateY(8px)}to{opacity:1;transform:rotateY(0deg) translateY(0)}}
+    @keyframes flipOutNext{
+        0%{transform:rotateY(0deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+        70%{box-shadow:30px 0 50px rgba(0,0,0,.55);}
+        100%{transform:rotateY(-94deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+    }
+    @keyframes flipInNext{
+        0%{transform:rotateY(94deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+        30%{box-shadow:-30px 0 50px rgba(0,0,0,.55);}
+        100%{transform:rotateY(0deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+    }
+    @keyframes flipOutPrev{
+        0%{transform:rotateY(0deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+        70%{box-shadow:-30px 0 50px rgba(0,0,0,.55);}
+        100%{transform:rotateY(94deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+    }
+    @keyframes flipInPrev{
+        0%{transform:rotateY(-94deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+        30%{box-shadow:30px 0 50px rgba(0,0,0,.55);}
+        100%{transform:rotateY(0deg);box-shadow:0 8px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);}
+    }
+    .book-page.page-enter{animation:pageFadeIn .25s ease;}
+    .book-page.flip-out-next{transform-origin:left center;animation:flipOutNext .22s cubic-bezier(.4,0,.7,1) forwards;}
+    .book-page.flip-in-next{transform-origin:left center;animation:flipInNext .24s cubic-bezier(.3,0,.2,1) forwards;}
+    .book-page.flip-out-prev{transform-origin:right center;animation:flipOutPrev .22s cubic-bezier(.4,0,.7,1) forwards;}
+    .book-page.flip-in-prev{transform-origin:right center;animation:flipInPrev .24s cubic-bezier(.3,0,.2,1) forwards;}
+
+    /* Zoom controls — a floating pill so every reader (not just the page-size
+       the admin picked) can zoom the page in or out, plus pinch-to-zoom. */
+    .zoom-controls{position:absolute;right:16px;bottom:62px;z-index:15;display:none;align-items:center;gap:2px;background:rgba(20,20,20,.85);border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:4px;backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.3);}
+    .zoom-controls.visible{display:flex;}
+    .zoom-btn{width:30px;height:30px;border-radius:50%;border:none;background:transparent;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .12s ease;}
+    .zoom-btn:hover{background:rgba(255,255,255,.16);}
+    .zoom-btn:active{transform:scale(.88);}
+    .zoom-label{min-width:42px;text-align:center;font-size:11px;color:rgba(255,255,255,.7);font-weight:600;cursor:pointer;user-select:none;}
+    .zoom-label:hover{color:#fff;}
+
+    /* Loading state in reader */
+    .reader-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.4);gap:14px;padding:60px 20px;}
+    .reader-loading i{font-size:30px;animation:spin 1s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .reader-loading p{font-size:14px;}
+
+    /* PDF mode — just stacked canvases, no pagination needed */
+    .pdf-stack{display:flex;flex-direction:column;align-items:center;gap:20px;padding-bottom:40px;}
+    .pdf-page-canvas{box-shadow:0 4px 24px rgba(0,0,0,.4);max-width:100%;animation:rowRise .4s ease backwards;}
+
+    /* Comments panel (slides from right in reader) */
+    .reader-comments-toggle{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .15s,transform .12s ease;display:flex;align-items:center;gap:6px;}
+    .reader-comments-toggle:hover{background:rgba(255,255,255,.16);}
+    .reader-comments-toggle:active{transform:scale(.95);}
+    .reader-comments-panel{position:absolute;right:0;top:50px;bottom:0;width:320px;background:#1e1e1e;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s ease;z-index:20;}
+    .reader-comments-panel.open{transform:translateX(0);}
+    .rcp-head{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;font-weight:600;color:#fff;}
+    .rcp-input-wrap{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
+    .rcp-textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;font-size:13px;font-family:'Inter',sans-serif;padding:9px 12px;resize:none;height:60px;outline:none;}
+    .rcp-textarea:focus{border-color:var(--accent);}
+    .rcp-post-btn{margin-top:8px;width:100%;background:var(--accent);color:#fff;border:none;padding:8px;border-radius:7px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s,transform .12s ease;}
+    .rcp-post-btn:hover{background:var(--accent-h);}
+    .rcp-post-btn:active{transform:scale(.97);}
+    .rcp-list{flex:1;overflow-y:auto;padding:10px 18px;}
+    .rcp-item{border-bottom:1px solid rgba(255,255,255,.06);padding:12px 0;animation:rowRise .3s ease backwards;}
+    .rcp-meta{display:flex;justify-content:space-between;margin-bottom:4px;}
+    .rcp-user{font-size:11px;font-weight:600;color:var(--accent);}
+    .rcp-date{font-size:10px;color:rgba(255,255,255,.3);}
+    .rcp-text{font-size:12px;color:rgba(255,255,255,.7);line-height:1.5;word-wrap:break-word;}
+    .rcp-empty{text-align:center;padding:24px;font-size:12px;color:rgba(255,255,255,.3);font-style:italic;}
+
+    /* ── ADMIN ── */
+    #adminScreen{padding:40px 32px 100px;max-width:1100px;margin:0 auto;}
+    .admin-header{margin-bottom:32px;}
+    .admin-header h1{font-family:'Playfair Display',serif;font-size:28px;margin-bottom:4px;}
+    .admin-header p{font-size:14px;color:var(--ink-3);}
+    .admin-tabs{display:flex;gap:4px;background:var(--surface-3);padding:4px;border-radius:var(--radius);margin-bottom:28px;width:fit-content;}
+    .admin-tab{padding:9px 20px;border:none;background:none;font-size:13px;font-weight:500;color:var(--ink-3);border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s,color .15s,transform .12s ease;}
+    .admin-tab:active{transform:scale(.95);}
+    .admin-tab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+    .admin-panel{display:none;}.admin-panel.active{display:block;animation:screenIn .35s cubic-bezier(.16,1,.3,1);}
+    .admin-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:12px;overflow:hidden;}
+    .admin-list-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--surface-3);font-size:14px;gap:12px;animation:rowRise .3s ease backwards;}
+    .admin-list-row:last-child{border-bottom:none;}
+    .admin-list-row-main{font-weight:500;}
+    .admin-list-row-sub{font-size:12px;color:var(--ink-3);margin-top:2px;}
+    /* Wrapper scrolls horizontally so Status/Actions are always reachable on
+       narrow screens, instead of being pushed off the edge of the viewport. */
+    .users-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;}
+    .users-hint{display:none;font-size:11px;color:var(--ink-4);padding:10px 16px 0;}
+    .users-table{width:100%;min-width:600px;border-collapse:collapse;font-size:13px;}
+    .users-table th{text-align:left;padding:12px 16px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-4);border-bottom:1px solid var(--surface-3);white-space:nowrap;}
+    .users-table td{padding:14px 16px;border-bottom:1px solid var(--surface-3);color:var(--ink-2);}
+    .users-table td:last-child{white-space:nowrap;}
+    .users-table tr:last-child td{border-bottom:none;}
+    .users-table tr:hover td{background:var(--surface-2);}
+    .users-table tbody tr{animation:rowFadeOnly .3s ease backwards;}
+    .status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;}
+    .status-badge.active{background:#d1fae5;color:var(--success);}
+    .status-badge.banned{background:#fff3cd;color:var(--warn);}
+    .action-btn{font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s,transform .12s ease;margin-right:4px;}
+    .action-btn:hover{opacity:.8;transform:translateY(-1px);}
+    .action-btn:active{transform:scale(.94);}
+    .action-btn.ban{background:#fff3cd;color:var(--warn);}
+    .action-btn.delete{background:#fee2e2;color:var(--danger);}
+
+    /* ── PAGE SIZE PICKER (in modal) ── */
+    .size-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:2px;}
+    .size-option{border:1.5px solid var(--surface-3);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s,transform .12s ease;}
+    .size-option:hover{border-color:var(--accent);background:var(--accent-bg);transform:translateY(-2px);}
+    .size-option:active{transform:scale(.96);}
+    .size-option.selected{border-color:var(--accent);background:var(--accent-bg);}
+    .size-option-label{font-size:12px;font-weight:700;color:var(--ink);display:block;}
+    .size-option-dim{font-size:10px;color:var(--ink-4);margin-top:2px;display:block;}
+    /* little page preview icon */
+    .size-option-icon{width:22px;height:28px;border:1.5px solid currentColor;border-radius:1px;margin:0 auto 5px;display:block;color:var(--ink-4);}
+    .size-option.selected .size-option-icon{color:var(--accent);}
+
+    /* ── FAB ── */
+    .fab-wrap{position:fixed;bottom:28px;right:28px;z-index:300;display:none;}
+    .fab-wrap.visible{display:flex;flex-direction:column;align-items:flex-end;gap:10px;animation:fabPop .4s cubic-bezier(.34,1.56,.64,1);}
+    .fab-options{display:none;flex-direction:column;align-items:flex-end;gap:8px;}
+    .fab-wrap.open .fab-options{display:flex;animation:popIn .15s ease;}
+    .fab-wrap.open .fab-main{background:var(--danger);}
+    .fab-wrap.open .fab-main i{transform:rotate(45deg);}
+    .fab-main{width:52px;height:52px;background:var(--accent);border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(59,59,212,.40);transition:background .18s,transform .15s ease;}
+    .fab-main:active{transform:scale(.9);}
+    .fab-main i{transition:transform .2s;}
+    .fab-option{background:var(--surface);border:1px solid var(--surface-3);color:var(--ink);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.08);white-space:nowrap;transition:background .12s,color .12s,transform .12s ease;}
+    .fab-option:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:translateX(-3px);}
+    .fab-option:active{transform:scale(.95);}
+
+    /* ── MODAL ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .22s ease;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal-box{background:var(--surface);border-radius:16px;padding:32px;width:460px;max-width:calc(100vw - 32px);box-shadow:0 16px 48px rgba(0,0,0,.18);position:relative;max-height:90vh;overflow-y:auto;}
+    .modal-overlay.open .modal-box{animation:popIn .2s cubic-bezier(.175,.885,.32,1.275);}
+    .modal-close{position:absolute;top:16px;right:16px;background:var(--surface-2);border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--ink-3);display:flex;align-items:center;justify-content:center;transition:background .12s,transform .15s ease;}
+    .modal-close:hover{background:var(--surface-3);transform:rotate(90deg);}
+    .modal-heading{font-size:18px;font-weight:600;margin-bottom:20px;}
+    .modal-field{margin-bottom:14px;}
+    .modal-field label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--ink-2);}
+    .modal-field input,.modal-field textarea,.modal-field select{width:100%;padding:10px 13px;border:1.5px solid var(--surface-3);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);background:var(--surface);outline:none;transition:border-color .15s;}
+    .modal-field input:focus,.modal-field textarea:focus,.modal-field select:focus{border-color:var(--accent);}
+    .modal-field textarea{resize:vertical;min-height:80px;}
+    .part-source-toggle{display:flex;gap:8px;}
+    .part-source-btn{flex:1;padding:9px 12px;border:1.5px solid var(--surface-3);background:var(--surface);color:var(--ink-3);font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .15s,background .15s,color .15s,transform .12s ease;}
+    .part-source-btn:hover{border-color:var(--accent);}
+    .part-source-btn:active{transform:scale(.97);}
+    .part-source-btn.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);}
+    .modal-submit-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;margin-top:6px;transition:background .15s,transform .12s ease;}
+    .modal-submit-btn:hover{background:var(--accent-h);}
+    .modal-submit-btn:active:not(:disabled){transform:scale(.97);}
+    .modal-submit-btn:disabled{opacity:.6;cursor:not-allowed;}
+
+    @media(max-width:640px){
+        #libraryScreen,#bookScreen,#adminScreen{padding:24px 16px 80px;}
+        .reader-topbar{padding:0 12px;}
+        .reader-nav-bar{gap:8px;}
+        .reader-comments-panel{width:100%;}
+        .admin-tabs{width:100%;overflow-x:auto;}
+        .users-hint{display:block;}
+        .users-table{font-size:12px;min-width:560px;}
+        .users-table th,.users-table td{padding:10px 12px;}
+        .size-picker{grid-template-columns:repeat(2,1fr);}
+    }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="mainNav">
+    <span class="nav-logo">Aadhi Studios</span>
+    <span class="nav-badge" id="adminBadge">Admin</span>
+    <span class="nav-spacer"></span>
+    <div style="position:relative;">
+        <button class="nav-icon-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
+        <div class="nav-dropdown" id="settingsDropdown">
+            <button id="themeBtn"><i class="fas fa-moon"></i> Toggle theme</button>
+            <div class="nav-divider"></div>
+            <button id="readerSignOutBtn" style="display:none"><i class="fas fa-sign-out-alt"></i> Sign out</button>
+            <button id="exitAdminBtn" class="danger" style="display:none"><i class="fas fa-user-shield"></i> Exit admin mode</button>
+        </div>
+    </div>
+</nav>
+
+<!-- LIBRARY -->
+<div class="screen active" id="libraryScreen">
+    <div class="library-header"><h1>Library</h1><p>Browse all genres and stories</p></div>
+    <div id="libraryContent">
+        <div class="empty-state" id="libraryEmpty">
+            <i class="fas fa-book-open"></i>
+            <h3>No books yet</h3><p>The admin hasn't added any stories yet.</p>
+        </div>
+    </div>
+</div>
+
+<!-- BOOK CHAPTERS (legacy - no longer used, kept for backwards compat) -->
+<div class="screen" id="bookScreen" style="display:none;">
+    <button class="back-btn" id="bookBackBtn"><i class="fas fa-arrow-left"></i> Library</button>
+    <h1 class="book-screen-title" id="bookTitle"></h1>
+    <span class="book-screen-size-badge" id="bookSizeBadge"></span>
+    <p class="book-screen-summary" id="bookSummary"></p>
+    <div class="chapters-label">Chapters</div>
+    <ul id="chaptersList" style="list-style:none;"></ul>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="adminScreen">
+    <div class="admin-header"><h1>Admin panel</h1><p>Manage your library content and users</p></div>
+    <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="tabGenres">Genres</button>
+        <button class="admin-tab" data-tab="tabStories">Stories</button>
+        <button class="admin-tab" data-tab="tabParts">Chapters</button>
+        <button class="admin-tab" data-tab="tabUsers">Users</button>
+    </div>
+    <div class="admin-card">
+        <div class="admin-panel active" id="tabGenres"><ul id="adminGenresList" style="list-style:none;"></ul></div>
+        <div class="admin-panel" id="tabStories"><ul id="adminStoriesList" style="list-style:none;"></ul></div>
+        <div class="admin-panel" id="tabParts"><ul id="adminPartsList" style="list-style:none;"></ul></div>
+        <div class="admin-panel" id="tabUsers">
+            <p class="users-hint"><i class="fas fa-arrows-left-right"></i> Swipe the table left to see status &amp; actions</p>
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead><tr><th>Username</th><th>Email</th><th>DOB</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ PAGE READER ════════════════════════════════════════ -->
+<div id="readerScreen">
+    <!-- Top bar -->
+    <div class="reader-topbar">
+        <button class="reader-close-btn" id="readerCloseBtn"><i class="fas fa-times"></i> Close</button>
+        <span class="reader-chapter-title" id="readerTitle"></span>
+        <button class="reader-comments-toggle" id="commentsToggleBtn"><i class="fas fa-comments"></i> Comments</button>
+    </div>
+
+    <!-- Viewport with page inside -->
+    <div class="reader-viewport" id="readerViewport">
+        <div class="reader-loading" id="readerLoading">
+            <i class="fas fa-circle-notch"></i>
+            <p>Loading chapter…</p>
+        </div>
+        <!-- .book-page injected by JS -->
+    </div>
+
+    <!-- Zoom pill — works for everyone via tap, or pinch with two fingers.
+         Lives outside .reader-viewport (which gets wiped/rebuilt on every
+         page turn) so it's never accidentally destroyed mid-session. -->
+    <div class="zoom-controls" id="zoomControls">
+        <button class="zoom-btn" id="zoomOutBtn" title="Zoom out"><i class="fas fa-minus"></i></button>
+        <span class="zoom-label" id="zoomLabel" title="Reset zoom">100%</span>
+        <button class="zoom-btn" id="zoomInBtn" title="Zoom in"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <!-- Bottom nav bar -->
+    <div class="reader-nav-bar" id="readerNavBar" style="display:none;">
+        <button class="page-nav-btn" id="prevPageBtn" disabled title="Previous page"><i class="fas fa-chevron-left"></i></button>
+        <span class="page-counter" id="pageCounter">Page 1 of 1</span>
+        <button class="page-nav-btn" id="nextPageBtn" disabled title="Next page"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <!-- Comments side panel -->
+    <div class="reader-comments-panel" id="commentsPanel">
+        <div class="rcp-head"><i class="fas fa-comments" style="color:var(--accent);margin-right:6px;"></i>Comments</div>
+        <div class="rcp-input-wrap">
+            <textarea class="rcp-textarea" id="commentInput" placeholder="Share your thoughts…"></textarea>
+            <button class="rcp-post-btn" id="commentPostBtn">Post comment</button>
+        </div>
+        <div class="rcp-list" id="commentsList"></div>
+    </div>
+</div>
+
+<!-- FAB -->
+<div class="fab-wrap" id="fabWrap">
+    <div class="fab-options">
+        <button class="fab-option" id="fabGenre">Add genre</button>
+        <button class="fab-option" id="fabStory">Add story</button>
+        <button class="fab-option" id="fabPart">Add chapter</button>
+    </div>
+    <button class="fab-main" id="fabMain"><i class="fas fa-plus"></i></button>
+</div>
+
+<!-- Admin footer -->
+<div style="position:fixed;bottom:0;left:0;width:100%;text-align:center;padding:12px;background:var(--surface);border-top:1px solid var(--surface-3);z-index:200;" id="authorFooter">
+    <button style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;" id="authorBtn">Admin?</button>
+</div>
+
+<!-- ══ MODALS ══════════════════════════════════════════════ -->
+
+<!-- Admin password gate -->
+<div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="authModal">×</button>
+        <div class="modal-heading"><i class="fas fa-lock" style="color:var(--accent);margin-right:8px;"></i>Admin access</div>
+        <div class="modal-field">
+            <label>Enter admin password</label>
+            <input type="password" id="authPassword" placeholder="••••••••" autocomplete="off">
+        </div>
+        <div id="authError" style="font-size:13px;color:var(--danger);margin-top:4px;display:none;"></div>
+        <button class="modal-submit-btn" id="authSubmitBtn">Unlock</button>
+    </div>
+</div>
+
+<!-- Genre -->
+<div class="modal-overlay" id="genreModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="genreModal">×</button>
+        <div class="modal-heading">Add genre</div>
+        <div class="modal-field"><label>Name</label><input type="text" id="genreName" placeholder="e.g. Fantasy"></div>
+        <div class="modal-field"><label>Description</label><textarea id="genreDesc" placeholder="Short description…"></textarea></div>
+        <button class="modal-submit-btn" id="saveGenreBtn">Save genre</button>
+    </div>
+</div>
+
+<!-- Story — now with page size picker -->
+<div class="modal-overlay" id="storyModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="storyModal">×</button>
+        <div class="modal-heading">Add story</div>
+        <div class="modal-field"><label>Title</label><input type="text" id="storyName" placeholder="Book title"></div>
+        <div class="modal-field"><label>Synopsis</label><textarea id="storyDesc" placeholder="Brief description…"></textarea></div>
+        <div class="modal-field"><label>Genre</label><select id="storyGenreSelect"></select></div>
+        <div class="modal-field">
+            <label>Page size for readers</label>
+            <div class="size-picker" id="sizePicker">
+                <div class="size-option selected" data-size="A4">
+                    <svg class="size-option-icon" viewBox="0 0 22 28"><rect x="1" y="1" width="20" height="26" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <span class="size-option-label">A4</span>
+                    <span class="size-option-dim">210 × 297 mm</span>
+                </div>
+                <div class="size-option" data-size="A5">
+                    <svg class="size-option-icon" viewBox="0 0 22 28" style="width:18px;height:24px;"><rect x="1" y="1" width="20" height="26" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <span class="size-option-label">A5</span>
+                    <span class="size-option-dim">148 × 210 mm</span>
+                </div>
+                <div class="size-option" data-size="A6">
+                    <svg class="size-option-icon" viewBox="0 0 22 28" style="width:14px;height:20px;"><rect x="1" y="1" width="20" height="26" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <span class="size-option-label">A6</span>
+                    <span class="size-option-dim">105 × 148 mm</span>
+                </div>
+                <div class="size-option" data-size="pocket">
+                    <svg class="size-option-icon" viewBox="0 0 22 28" style="width:12px;height:16px;"><rect x="1" y="1" width="20" height="26" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <span class="size-option-label">Pocket</span>
+                    <span class="size-option-dim">Compact</span>
+                </div>
+            </div>
+        </div>
+        <button class="modal-submit-btn" id="saveStoryBtn">Save story</button>
+    </div>
+</div>
+
+<!-- Chapter -->
+<div class="modal-overlay" id="partModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="partModal">×</button>
+        <div class="modal-heading">Add chapter</div>
+        <div class="modal-field"><label>Chapter name</label><input type="text" id="partName" placeholder="e.g. Chapter 1"></div>
+
+        <div class="modal-field">
+            <label>How are you adding this chapter?</label>
+            <div class="part-source-toggle" id="partSourceToggle">
+                <button type="button" class="part-source-btn active" data-source="file">Upload file</button>
+                <button type="button" class="part-source-btn" data-source="type">Type it in</button>
+            </div>
+        </div>
+
+        <div class="modal-field" id="partFileField">
+            <label>Document (.docx or .pdf)</label>
+            <input type="file" id="partFile" accept=".docx,.pdf">
+        </div>
+
+        <div class="modal-field" id="partTextField" style="display:none;">
+            <label>Chapter text</label>
+            <textarea id="partText" placeholder="Type or paste the chapter here. Each new line becomes its own paragraph…" style="min-height:200px;"></textarea>
+            <div style="font-size:11px;color:var(--ink-4);margin-top:6px;">We'll automatically turn this into a formatted .docx when you upload — no need to write it in Word first.</div>
+        </div>
+
+        <div class="modal-field">
+            <label>Story</label>
+            <input type="text" id="partStorySearch" list="partStorySuggestions" placeholder="Start typing story title…">
+            <datalist id="partStorySuggestions"></datalist>
+        </div>
+        <div id="uploadProgress" style="font-size:12px;color:var(--ink-3);margin-top:6px;display:none;"></div>
+        <button class="modal-submit-btn" id="savePartBtn">Upload chapter</button>
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- ══ SCRIPT ══════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, where, getDocs }
+    from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFunctions, httpsCallable }
+    from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
+/* ── CLOUDINARY (free file hosting for chapter uploads) ── */
+const CLOUDINARY_CLOUD_NAME = 'dfmidzcom';
+const CLOUDINARY_UPLOAD_PRESET = 'aadhi_chapters';
+
+const app  = initializeApp({
+    apiKey:"AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
+    authDomain:"aadhi-studios.firebaseapp.com",
+    projectId:"aadhi-studios",
+    storageBucket:"aadhi-studios.firebasestorage.app",
+    messagingSenderId:"1052163368305",
+    appId:"1:1052163368305:web:c8c51c39c271659caa42d0"
+});
+const auth    = getAuth(app);
+const db      = getFirestore(app);
+const fns     = getFunctions(app);
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+/* ── PAGE SIZE DEFINITIONS ── */
+/* All dimensions in CSS pixels at 96dpi. We scale to fit the viewport. */
+const PAGE_SIZES = {
+    A4:     { label:'A4',     w:794,  h:1123, padding:'64px 72px', fontSize:'15px' },
+    A5:     { label:'A5',     w:559,  h:794,  padding:'52px 56px', fontSize:'14px' },
+    A6:     { label:'A6',     w:397,  h:559,  padding:'40px 44px', fontSize:'13px' },
+    pocket: { label:'Pocket', w:320,  h:480,  padding:'32px 36px', fontSize:'13px' },
+};
+
+/* ── ADMIN GATE ──────────────────────────────────────────
+   Anyone who enters this password on the "Admin?" screen
+   gets the admin UI. Firestore rules are open for the
+   genres/stories/parts/users/comments collections, so this
+   is a UI convenience, not a hard security boundary.
+────────────────────────────────────────────────────────── */
+const ADMIN_PASSWORD = '130813';
+
+/* ── STATE ── */
+let genres=[], stories=[], parts=[], siteUsers=[];
+let isAdmin=false;
+let currentStoryId=null;
+let currentStoryPageSize='A4';
+let currentChapterUrl='';
+let currentUsername='Guest Reader';
+let unsubComments=null, unsubUsers=null;
+
+// Paginator state
+let allPages=[];     // array of HTML strings, one per page
+let currentPage=0;
+
+const $=id=>document.getElementById(id);
+
+/* ── TOAST ── */
+function toast(msg,dur=3000){const el=$('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),dur);}
+
+/* ── SCREENS ── */
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+
+/* ── MODALS ── */
+function openModal(id){$(id).classList.add('open');}
+function closeModal(id){$(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+
+/* ── THEME ── */
+$('themeBtn').addEventListener('click',()=>{
+    const dark=document.body.getAttribute('data-theme')==='dark';
+    document.body.setAttribute('data-theme',dark?'':'dark');
+    $('themeBtn').innerHTML=dark?'<i class="fas fa-moon"></i> Toggle theme':'<i class="fas fa-sun"></i> Toggle theme';
+});
+
+/* ── SETTINGS DROPDOWN ── */
+$('settingsBtn').addEventListener('click',e=>{
+    e.stopPropagation();
+    const open=$('settingsDropdown').classList.toggle('open');
+    $('settingsBtn').classList.toggle('open',open);
+});
+document.addEventListener('click',()=>{
+    $('settingsDropdown').classList.remove('open');
+    $('settingsBtn').classList.remove('open');
+    $('fabWrap').classList.remove('open');
+});
+
+/* ── SIZE PICKER ── */
+let selectedSize='A4';
+document.querySelectorAll('.size-option').forEach(opt=>{
+    opt.addEventListener('click',()=>{
+        document.querySelectorAll('.size-option').forEach(o=>o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedSize=opt.dataset.size;
+    });
+});
+
+/* ── CHAPTER SOURCE TOGGLE (upload a file vs. type the chapter in) ── */
+document.querySelectorAll('.part-source-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.part-source-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const typing = btn.dataset.source==='type';
+        $('partFileField').style.display = typing ? 'none' : 'block';
+        $('partTextField').style.display = typing ? 'block' : 'none';
+    });
+});
+
+/* ── FIRESTORE LISTENERS ── */
+onSnapshot(collection(db,'genres'),snap=>{genres=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminGenres();refreshGenreDropdown();});
+onSnapshot(collection(db,'stories'),snap=>{stories=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminStories();refreshStoryDatalist();});
+onSnapshot(collection(db,'parts'),snap=>{parts=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminParts();});
+
+function startUserListener(){
+    if(unsubUsers)return;
+    unsubUsers=onSnapshot(collection(db,'users'),snap=>{siteUsers=snap.docs.map(d=>({id:d.id,...d.data()}));renderUsersTable();});
+}
+function stopUserListener(){if(unsubUsers){unsubUsers();unsubUsers=null;}}
+
+/* ── ADMIN MODE (simple password gate, NOT tied to accounts) ── */
+function enterAdminMode(){
+    isAdmin=true;
+    $('adminBadge').style.display='inline-flex';
+    $('exitAdminBtn').style.display='flex';
+    $('authorBtn').textContent='Admin panel';
+    $('fabWrap').classList.add('visible');
+    startUserListener();
+}
+function exitAdminMode(){
+    isAdmin=false;
+    $('adminBadge').style.display='none';
+    $('exitAdminBtn').style.display='none';
+    $('authorBtn').textContent='Admin?';
+    $('fabWrap').classList.remove('visible','open');
+    stopUserListener();
+    if($('adminScreen').classList.contains('active'))showScreen('libraryScreen');
+}
+
+$('authorBtn').addEventListener('click',()=>{
+    if(isAdmin){
+        const onAdmin=$('adminScreen').classList.contains('active');
+        onAdmin?showScreen('libraryScreen'):showScreen('adminScreen');
+        $('authorBtn').textContent=onAdmin?'Admin panel':'Back to library';
+    } else {
+        $('authPassword').value='';
+        $('authError').style.display='none';
+        openModal('authModal');
+    }
+});
+
+$('authSubmitBtn').addEventListener('click',()=>{
+    const pw=$('authPassword').value,err=$('authError');
+    err.style.display='none';
+
+    if(pw!==ADMIN_PASSWORD){
+        err.textContent='Incorrect password.';
+        err.style.display='block';
+        $('authPassword').value='';
+        const box=document.querySelector('#authModal .modal-box');
+        box.style.animation='none';
+        requestAnimationFrame(()=>{box.style.animation='popIn 0.2s cubic-bezier(.175,.885,.32,1.275), shakeModal 0.4s ease';});
+        return;
+    }
+
+    closeModal('authModal');
+    $('authPassword').value='';
+    document.querySelector('#authModal .modal-box').style.animation='';
+    enterAdminMode();
+    showScreen('adminScreen');
+    $('authorBtn').textContent='Back to library';
+    toast('Admin mode unlocked.');
+});
+$('authPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('authSubmitBtn').click();});
+
+$('exitAdminBtn').addEventListener('click',()=>{
+    exitAdminMode();
+    $('settingsDropdown').classList.remove('open');
+    toast('Exited admin mode.');
+});
+
+/* ── READER ACCOUNT (Firebase Auth — from sign up / sign in on index.html) ── */
+onAuthStateChanged(auth,async user=>{
+    if(user){
+        try{
+            const snap=await getDocs(query(collection(db,'users'),where('uid','==',user.uid)));
+            currentUsername = !snap.empty ? (snap.docs[0].data().username || 'Reader') : 'Reader';
+        }catch{ currentUsername='Reader'; }
+        $('readerSignOutBtn').style.display='flex';
+        $('readerSignOutBtn').innerHTML=`<i class="fas fa-sign-out-alt"></i> Sign out (${currentUsername})`;
+    } else {
+        currentUsername='Guest Reader';
+        $('readerSignOutBtn').style.display='none';
+    }
+});
+
+$('readerSignOutBtn').addEventListener('click',()=>{
+    signOut(auth).then(()=>{
+        $('settingsDropdown').classList.remove('open');
+        toast('Signed out of your account.');
+        setTimeout(()=>{ window.location.href='index.html'; }, 800);
+    });
+});
+
+/* ── LIBRARY ── */
+/* ── LIBRARY STATE ── */
+let currentLibraryView='genres'; // 'genres', 'stories', or 'chapters'
+let selectedGenreId=null;
+let selectedStoryId=null;
+let genreSearchQuery='';
+let storySearchQuery='';
+
+// Re-renders rebuild the whole container, which would normally steal focus
+// out of a search box mid-keystroke. This snapshots whichever input/textarea
+// is focused beforehand and restores focus + cursor position afterward.
+function withFocusPreserved(renderFn){
+    const active=document.activeElement;
+    const activeId=active&&active.id;
+    const selStart=active&&typeof active.selectionStart==='number'?active.selectionStart:null;
+    const selEnd=active&&typeof active.selectionEnd==='number'?active.selectionEnd:null;
+    renderFn();
+    if(activeId){
+        const el=document.getElementById(activeId);
+        if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){
+            el.focus();
+            if(selStart!==null)el.setSelectionRange(selStart,selEnd);
+        }
+    }
+}
+
+function renderLibrary(){
+    withFocusPreserved(()=>{
+        const container=$('libraryContent');
+
+        if(currentLibraryView==='genres'){
+            renderGenresView(container);
+        } else if(currentLibraryView==='stories'){
+            renderStoriesView(container);
+        } else if(currentLibraryView==='chapters'){
+            renderChaptersView(container);
+        }
+    });
+}
+
+function renderGenresView(container){
+    container.innerHTML='';
+    if(genres.length===0){
+        container.innerHTML=`<div class="empty-state"><i class="fas fa-bookmark"></i><h3>No genres yet</h3><p>The admin hasn't added any genres yet.</p></div>`;
+        return;
+    }
+
+    const searchBar=document.createElement('div');
+    searchBar.className='library-search';
+    searchBar.innerHTML=`
+        <i class="fas fa-search"></i>
+        <input type="text" id="genreSearchInput" placeholder="Search genres…" value="${escapeHtml(genreSearchQuery)}">
+        ${genreSearchQuery?'<button type="button" class="library-search-clear" id="genreSearchClear" title="Clear search"><i class="fas fa-times"></i></button>':''}
+    `;
+    container.appendChild(searchBar);
+    searchBar.querySelector('#genreSearchInput').addEventListener('input',e=>{
+        genreSearchQuery=e.target.value;
+        renderLibrary();
+    });
+    const genreClearBtn=searchBar.querySelector('#genreSearchClear');
+    if(genreClearBtn)genreClearBtn.addEventListener('click',()=>{genreSearchQuery='';renderLibrary();});
+
+    const q=genreSearchQuery.trim().toLowerCase();
+    const filteredGenres=q?genres.filter(g=>g.name.toLowerCase().includes(q)||(g.desc||'').toLowerCase().includes(q)):genres;
+
+    if(filteredGenres.length===0){
+        const empty=document.createElement('div');
+        empty.className='empty-state';
+        empty.innerHTML=`<i class="fas fa-search"></i><h3>No matches</h3><p>No genres match "${escapeHtml(genreSearchQuery)}".</p>`;
+        container.appendChild(empty);
+        return;
+    }
+
+    const list=document.createElement('ul');
+    list.style.listStyle='none';
+    list.style.display='flex';
+    list.style.flexDirection='column';
+    list.style.gap='18px';
+    filteredGenres.forEach((genre, i)=>{
+        const storyCount=stories.filter(s=>s.genreId===genre.id).length;
+        const row=document.createElement('li');
+        row.className='chapter-row';
+        row.style.cursor='pointer';
+        row.style.padding='32px 28px';
+        row.style.minHeight='120px';
+        row.style.display='flex';
+        row.style.alignItems='center';
+        row.style.animationDelay=(i*0.05)+'s';
+        row.onclick=()=>{selectedGenreId=genre.id;storySearchQuery='';currentLibraryView='stories';renderLibrary();};
+        row.innerHTML=`
+            <span class="chapter-row-name" style="flex:1;">
+                <i class="fas fa-folder" style="font-size:28px;margin-right:16px;"></i>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-weight:700;font-size:22px;">${genre.name}</div>
+                    <div style="font-size:14px;color:var(--ink-3);font-weight:400;">${genre.desc||'No description'} · ${storyCount} stor${storyCount===1?'y':'ies'}</div>
+                </div>
+            </span>
+            <button class="chapter-open-btn" onclick="event.stopPropagation();" style="pointer-events:none;opacity:0;">Open</button>
+        `;
+        list.appendChild(row);
+    });
+    container.appendChild(list);
+}
+
+function renderStoriesView(container){
+    container.innerHTML='';
+    const genre=genres.find(g=>g.id===selectedGenreId);
+    if(!genre){currentLibraryView='genres';renderLibrary();return;}
+    
+    const header=document.createElement('div');
+    header.style.marginBottom='24px';
+    header.style.animation='screenIn .35s cubic-bezier(.16,1,.3,1)';
+    header.innerHTML=`
+        <button class="back-btn" onclick="window._backToGenres()" style="margin-bottom:20px;"><i class="fas fa-arrow-left"></i> Genres</button>
+        <h1 class="library-header" style="font-size:28px;margin-bottom:4px;">${genre.name}</h1>
+        <p style="font-size:14px;color:var(--ink-3);">${genre.desc||''}</p>
+    `;
+    container.appendChild(header);
+    
+    const storyList=stories.filter(s=>s.genreId===selectedGenreId);
+    if(storyList.length===0){
+        container.innerHTML+=`<p style="font-size:14px;color:var(--ink-4);font-style:italic;">No stories in this genre yet.</p>`;
+        return;
+    }
+
+    const searchBar=document.createElement('div');
+    searchBar.className='library-search';
+    searchBar.innerHTML=`
+        <i class="fas fa-search"></i>
+        <input type="text" id="storySearchInput" placeholder="Search stories in ${escapeHtml(genre.name)}…" value="${escapeHtml(storySearchQuery)}">
+        ${storySearchQuery?'<button type="button" class="library-search-clear" id="storySearchClear" title="Clear search"><i class="fas fa-times"></i></button>':''}
+    `;
+    container.appendChild(searchBar);
+    searchBar.querySelector('#storySearchInput').addEventListener('input',e=>{
+        storySearchQuery=e.target.value;
+        renderLibrary();
+    });
+    const storyClearBtn=searchBar.querySelector('#storySearchClear');
+    if(storyClearBtn)storyClearBtn.addEventListener('click',()=>{storySearchQuery='';renderLibrary();});
+
+    const q=storySearchQuery.trim().toLowerCase();
+    const filteredStories=q?storyList.filter(s=>s.name.toLowerCase().includes(q)||(s.desc||'').toLowerCase().includes(q)):storyList;
+
+    if(filteredStories.length===0){
+        const empty=document.createElement('p');
+        empty.style.cssText='font-size:14px;color:var(--ink-4);font-style:italic;padding:16px 0;';
+        empty.textContent=`No stories match "${storySearchQuery}".`;
+        container.appendChild(empty);
+        return;
+    }
+    
+    const list=document.createElement('ul');
+    list.style.listStyle='none';
+    list.style.display='flex';
+    list.style.flexDirection='column';
+    list.style.gap='12px';
+    filteredStories.forEach((story, i)=>{
+        const sp=parts.filter(p=>p.storyId===story.id);
+        const sizeLabel=story.pageSize||'A4';
+        const row=document.createElement('li');
+        row.className='chapter-row';
+        row.style.cursor='pointer';
+        row.style.animationDelay=(i*0.05)+'s';
+        row.onclick=()=>{selectedStoryId=story.id;currentLibraryView='chapters';renderLibrary();};
+        row.innerHTML=`
+            <span class="chapter-row-name" style="flex:1;">
+                <i class="fas fa-book"></i>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <div style="font-weight:600;font-size:15px;">${story.name}</div>
+                    <div style="font-size:12px;color:var(--ink-3);font-weight:400;">${story.desc||'No synopsis'} · ${sizeLabel} · ${sp.length} chapter${sp.length!==1?'s':''}</div>
+                </div>
+            </span>
+            <button class="chapter-open-btn" onclick="event.stopPropagation();" style="pointer-events:none;opacity:0;">Open</button>
+        `;
+        list.appendChild(row);
+    });
+    container.appendChild(list);
+}
+
+function renderChaptersView(container){
+    container.innerHTML='';
+    const story=stories.find(s=>s.id===selectedStoryId);
+    if(!story){currentLibraryView='stories';renderLibrary();return;}
+    const genre=genres.find(g=>g.id===story.genreId);
+    
+    const header=document.createElement('div');
+    header.style.marginBottom='28px';
+    header.style.animation='screenIn .35s cubic-bezier(.16,1,.3,1)';
+    header.innerHTML=`
+        <button class="back-btn" onclick="window._backToStories()" style="margin-bottom:20px;"><i class="fas fa-arrow-left"></i> ${genre?.name||'Back'}</button>
+        <h1 class="library-header" style="font-size:28px;margin-bottom:4px;">${story.name}</h1>
+        <span class="book-screen-size-badge">${story.pageSize||'A4'} format</span>
+        <p class="book-screen-summary">${story.desc||'No summary provided.'}</p>
+    `;
+    container.appendChild(header);
+    
+    const chaptersLabel=document.createElement('div');
+    chaptersLabel.className='chapters-label';
+    chaptersLabel.textContent='Chapters';
+    container.appendChild(chaptersLabel);
+    
+    const sp=parts.filter(p=>p.storyId===selectedStoryId);
+    if(sp.length===0){
+        const empty=document.createElement('p');
+        empty.style.cssText='font-size:14px;color:var(--ink-4);font-style:italic;padding:16px 0;';
+        empty.textContent='No chapters published yet.';
+        container.appendChild(empty);
+        return;
+    }
+    
+    const list=document.createElement('ul');
+    list.style.listStyle='none';
+    sp.forEach((p, i)=>{
+        const row=document.createElement('li');
+        row.className='chapter-row';
+        row.style.animationDelay=(i*0.05)+'s';
+        row.onclick=()=>window._openChapter(p.fileUrl, encodeURIComponent(p.fileName), encodeURIComponent(p.name));
+        row.innerHTML=`<span class="chapter-row-name"><i class="fas fa-file-alt"></i>${p.name}</span><button class="chapter-open-btn">Read</button>`;
+        list.appendChild(row);
+    });
+    container.appendChild(list);
+}
+
+window._backToGenres=function(){currentLibraryView='genres';renderLibrary();};
+window._backToStories=function(){currentLibraryView='stories';renderLibrary();};
+
+/* ═══════════════════════════════════════════════════
+   PAGE READER ENGINE
+═══════════════════════════════════════════════════ */
+
+window._openChapter=function(fileUrl,encodedFileName,encodedName){
+    const fileName=decodeURIComponent(encodedFileName);
+    const chapterName=decodeURIComponent(encodedName);
+    currentChapterUrl=fileUrl;
+    $('readerTitle').textContent=chapterName;
+
+    // Reset zoom/flip state for the new chapter
+    userZoom=1; fitScale=1; pageStageEl=null; isFlipping=false; pinchStartDist=null; readerMode='docx';
+    $('zoomControls').classList.remove('visible');
+    $('zoomControls').style.bottom='';
+    $('zoomLabel').textContent='100%';
+
+    // Show reader
+    $('readerScreen').classList.add('open');
+    document.body.style.overflow='hidden';
+    $('readerNavBar').style.display='none';
+    $('readerViewport').innerHTML='';
+    const loadingDiv=document.createElement('div');
+    loadingDiv.className='reader-loading';
+    loadingDiv.innerHTML='<i class="fas fa-circle-notch"></i><p>Loading chapter…</p>';
+    $('readerViewport').appendChild(loadingDiv);
+
+    startCommentListener(fileUrl);
+
+    fetch(fileUrl)
+        .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();})
+        .then(blob=>{
+            const reader=new FileReader();
+            if(fileName.endsWith('.docx')){
+                reader.onload=e=>{
+                    mammoth.convertToHtml({arrayBuffer:e.target.result}).then(result=>{
+                        buildPagedReader(result.value, currentStoryPageSize);
+                    }).catch(()=>showReaderError('Could not parse Word document.'));
+                };
+                reader.readAsArrayBuffer(blob);
+            } else if(fileName.endsWith('.pdf')){
+                reader.onload=e=>{
+                    buildPDFReader(new Uint8Array(e.target.result));
+                };
+                reader.readAsArrayBuffer(blob);
+            } else {
+                showReaderError('Unsupported file type.');
+            }
+        })
+        .catch(err=>showReaderError('Failed to load: '+err.message));
+};
+
+/* ── BUILD PAGED READER (for .docx) ── */
+function buildPagedReader(htmlContent, sizeKey){
+    const sz = PAGE_SIZES[sizeKey] || PAGE_SIZES.A4;
+
+    // Parse HTML into a hidden div to walk nodes
+    const parser = new DOMParser();
+    const doc2 = parser.parseFromString(`<div>${htmlContent}</div>`,'text/html');
+    const nodes = Array.from(doc2.body.firstChild.childNodes);
+
+    // We'll group nodes into pages by estimating height
+    // Use an offscreen measurer with the same styles
+    const measurer = document.createElement('div');
+    measurer.style.cssText = `position:fixed;visibility:hidden;pointer-events:none;left:-9999px;top:0;
+        width:${sz.w - parseInt(sz.padding)*2 - 60}px;
+        font-family:Lora,Georgia,serif;font-size:${sz.fontSize};line-height:1.82;word-wrap:break-word;`;
+    document.body.appendChild(measurer);
+
+    // Available height per page (minus padding top+bottom and page number area)
+    const paddingVal = parseInt(sz.padding); // roughly
+    const availH = sz.h - paddingVal * 2 - 30;
+
+    const pages = [];
+    let currentPageNodes = [];
+    let usedH = 0;
+
+    function nodeToHTML(node){
+        if(node.nodeType===3) return node.textContent;
+        const el=document.createElement(node.nodeName);
+        Array.from(node.attributes||[]).forEach(a=>el.setAttribute(a.name,a.value));
+        el.innerHTML=node.innerHTML||'';
+        return el.outerHTML;
+    }
+
+    function measureNode(node){
+        measurer.innerHTML = nodeToHTML(node);
+        return measurer.offsetHeight || 0;
+    }
+
+    function flushPage(){
+        if(currentPageNodes.length>0){
+            pages.push(currentPageNodes.map(n=>nodeToHTML(n)).join(''));
+            currentPageNodes=[];
+            usedH=0;
+        }
+    }
+
+    nodes.forEach(node=>{
+        if(node.nodeType===3&&node.textContent.trim()==='')return; // skip blank text nodes
+        const h = measureNode(node) + 16; // 16px margin
+
+        if(usedH + h > availH && currentPageNodes.length > 0){
+            flushPage();
+        }
+
+        // If a single node is taller than a full page, force it in alone
+        if(h > availH){
+            flushPage();
+            pages.push(nodeToHTML(node));
+            return;
+        }
+
+        currentPageNodes.push(node);
+        usedH += h;
+    });
+    flushPage();
+
+    document.body.removeChild(measurer);
+
+    // If no content
+    if(pages.length===0){ pages.push('<p style="color:#aaa;font-style:italic;">This chapter appears to be empty.</p>'); }
+
+    allPages = pages;
+    currentPage = 0;
+    renderCurrentPage(sz);
+}
+
+/* ── ZOOM (buttons + pinch) — applies on top of the fit-to-screen scale.
+   Works the same way for both reading modes: docx pages zoom from their
+   fit-to-screen baseline, the PDF stack zooms from its native scale. ── */
+let fitScale=1, userZoom=1, pageStageEl=null, isFlipping=false, readerMode='docx';
+
+function applyZoomTransform(){
+    const target=pageStageEl;
+    if(!target)return;
+    const total=readerMode==='pdf' ? userZoom : fitScale*userZoom;
+    target.style.transform=`scale(${total})`;
+    target.style.transformOrigin='top center';
+    if(readerMode==='docx'){
+        const sz=PAGE_SIZES[currentStoryPageSize]||PAGE_SIZES.A4;
+        target.style.marginBottom=(sz.h*total - sz.h)+'px'; // collapse negative space after scale
+        $('readerViewport').style.minHeight=(sz.h*total + 80)+'px';
+    } else {
+        target.style.marginBottom='0px';
+        $('readerViewport').style.minHeight='';
+    }
+    $('zoomLabel').textContent=Math.round(userZoom*100)+'%';
+}
+function setZoom(z){
+    userZoom=Math.max(0.6, Math.min(2.5, z));
+    applyZoomTransform();
+}
+$('zoomInBtn').addEventListener('click',()=>setZoom(userZoom+0.15));
+$('zoomOutBtn').addEventListener('click',()=>setZoom(userZoom-0.15));
+$('zoomLabel').addEventListener('click',()=>setZoom(1));
+
+// Pinch-to-zoom with two fingers, right on the page — works for every reader,
+// not just admins. touch-action:pan-y (set in CSS) keeps single-finger
+// scrolling native while letting us own the 2-finger gesture.
+let pinchStartDist=null, pinchStartZoom=1;
+function touchDist(t){const dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY;return Math.hypot(dx,dy);}
+$('readerViewport').addEventListener('touchstart',e=>{
+    if(e.touches.length===2){pinchStartDist=touchDist(e.touches);pinchStartZoom=userZoom;}
+},{passive:true});
+$('readerViewport').addEventListener('touchmove',e=>{
+    if(e.touches.length===2&&pinchStartDist){
+        e.preventDefault();
+        setZoom(pinchStartZoom*(touchDist(e.touches)/pinchStartDist));
+    }
+},{passive:false});
+$('readerViewport').addEventListener('touchend',e=>{
+    if(e.touches.length<2)pinchStartDist=null;
+});
+
+function renderCurrentPage(sz, direction){
+    const viewport=$('readerViewport');
+
+    const vw=viewport.clientWidth - 40;
+    const vh=viewport.clientHeight - 40;
+    fitScale=Math.min(1, vw/sz.w, vh/sz.h);
+
+    const stage=document.createElement('div');
+    stage.className='book-page-stage';
+    stage.style.width=sz.w+'px';
+    stage.style.height=sz.h+'px';
+    stage.style.transformOrigin='top center';
+
+    const pageEl=document.createElement('div');
+    pageEl.className='book-page';
+
+    const contentEl=document.createElement('div');
+    contentEl.className='book-page-content';
+    contentEl.style.setProperty('--page-padding', sz.padding);
+    contentEl.style.setProperty('--page-font-size', sz.fontSize);
+    contentEl.innerHTML=allPages[currentPage];
+
+    const numEl=document.createElement('div');
+    numEl.className='book-page-num';
+    numEl.textContent=(currentPage+1)+' / '+allPages.length;
+
+    pageEl.appendChild(contentEl);
+    pageEl.appendChild(numEl);
+    stage.appendChild(pageEl);
+
+    function finalizeNewPage(){
+        viewport.innerHTML='';
+        viewport.appendChild(stage);
+        pageStageEl=stage;
+        readerMode='docx';
+        applyZoomTransform();
+
+        $('readerNavBar').style.display='flex';
+        $('zoomControls').classList.add('visible');
+        $('zoomControls').style.bottom='62px';
+        $('pageCounter').textContent=`Page ${currentPage+1} of ${allPages.length}`;
+        $('prevPageBtn').disabled=currentPage===0;
+        $('nextPageBtn').disabled=currentPage===allPages.length-1;
+        isFlipping=false;
+
+        if(direction){
+            const inClass=direction==='next' ? 'flip-in-next' : 'flip-in-prev';
+            pageEl.classList.add(inClass);
+            pageEl.addEventListener('animationend',()=>pageEl.classList.remove(inClass),{once:true});
+        } else {
+            pageEl.classList.add('page-enter');
+            pageEl.addEventListener('animationend',()=>pageEl.classList.remove('page-enter'),{once:true});
+        }
+    }
+
+    const existingPage=viewport.querySelector('.book-page-stage .book-page');
+    if(direction && existingPage){
+        isFlipping=true;
+        $('prevPageBtn').disabled=true;
+        $('nextPageBtn').disabled=true;
+        const outClass=direction==='next' ? 'flip-out-next' : 'flip-out-prev';
+        existingPage.classList.add(outClass);
+        existingPage.addEventListener('animationend', finalizeNewPage, {once:true});
+    } else {
+        finalizeNewPage();
+    }
+}
+
+$('prevPageBtn').addEventListener('click',()=>{
+    if(isFlipping||currentPage<=0)return;
+    currentPage--;const sz=PAGE_SIZES[currentStoryPageSize]||PAGE_SIZES.A4;renderCurrentPage(sz,'prev');
+});
+$('nextPageBtn').addEventListener('click',()=>{
+    if(isFlipping||currentPage>=allPages.length-1)return;
+    currentPage++;const sz=PAGE_SIZES[currentStoryPageSize]||PAGE_SIZES.A4;renderCurrentPage(sz,'next');
+});
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+    if(!$('readerScreen').classList.contains('open'))return;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown') $('nextPageBtn').click();
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp')    $('prevPageBtn').click();
+});
+
+/* ── BUILD PDF READER ── */
+function buildPDFReader(typedArray){
+    $('readerNavBar').style.display='none';
+    pdfjsLib.getDocument({data:typedArray}).promise.then(pdf=>{
+        const viewport2 = $('readerViewport');
+        viewport2.innerHTML='';
+        const stack=document.createElement('div');
+        stack.className='pdf-stack';
+        viewport2.appendChild(stack);
+
+        const vw = viewport2.clientWidth - 40;
+        let chain=Promise.resolve();
+        for(let i=1;i<=pdf.numPages;i++){
+            const pn=i;
+            chain=chain.then(()=>pdf.getPage(pn).then(page=>{
+                const naturalVP=page.getViewport({scale:1});
+                const scale=Math.min(1.2, vw/naturalVP.width);
+                const scaledVP=page.getViewport({scale});
+                const canvas=document.createElement('canvas');
+                canvas.className='pdf-page-canvas';
+                canvas.width=scaledVP.width;canvas.height=scaledVP.height;
+                stack.appendChild(canvas);
+                return page.render({canvasContext:canvas.getContext('2d'),viewport:scaledVP}).promise;
+            }));
+        }
+        chain.then(()=>{
+            readerMode='pdf';
+            pageStageEl=stack;
+            applyZoomTransform();
+            $('zoomControls').classList.add('visible');
+            $('zoomControls').style.bottom='16px';
+        });
+    }).catch(()=>showReaderError('Could not render PDF.'));
+}
+
+function showReaderError(msg){
+    $('readerViewport').innerHTML=`<div style="text-align:center;padding:80px 20px;color:rgba(255,255,255,.4);"><i class="fas fa-exclamation-circle" style="font-size:32px;margin-bottom:12px;display:block;"></i>${msg}</div>`;
+}
+
+/* ── CLOSE READER ── */
+$('readerCloseBtn').addEventListener('click',closeReader);
+function closeReader(){
+    $('readerScreen').classList.remove('open');
+    document.body.style.overflow='';
+    if(unsubComments){unsubComments();unsubComments=null;}
+    currentChapterUrl='';
+    allPages=[];currentPage=0;
+    pageStageEl=null;
+    $('zoomControls').classList.remove('visible');
+    $('commentsPanel').classList.remove('open');
+}
+
+/* ── COMMENTS TOGGLE ── */
+$('commentsToggleBtn').addEventListener('click',e=>{e.stopPropagation();$('commentsPanel').classList.toggle('open');});
+
+/* ── COMMENTS ── */
+function startCommentListener(fileUrl){
+    if(unsubComments){unsubComments();unsubComments=null;}
+    $('commentsList').innerHTML=`<div class="rcp-empty">Loading…</div>`;
+    const q=query(collection(db,'comments'),where('chapterUrl','==',fileUrl));
+    unsubComments=onSnapshot(q,snap=>{
+        const items=snap.docs.map(d=>d.data()).sort((a,b)=>b.timestamp-a.timestamp);
+        if(items.length===0){$('commentsList').innerHTML=`<div class="rcp-empty">Be the first to comment!</div>`;return;}
+        $('commentsList').innerHTML=items.map((c,i)=>`<div class="rcp-item" style="animation-delay:${(i*0.04).toFixed(2)}s"><div class="rcp-meta"><span class="rcp-user">${escapeHtml(c.username)}</span><span class="rcp-date">${new Date(c.timestamp).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span></div><div class="rcp-text">${escapeHtml(c.text)}</div></div>`).join('');
+    });
+}
+
+$('commentPostBtn').addEventListener('click',async()=>{
+    const input=$('commentInput'),text=input.value.trim();
+    if(!text||!currentChapterUrl)return;
+    const username=isAdmin?'Studio Admin ★':currentUsername;
+    try{await addDoc(collection(db,'comments'),{chapterUrl:currentChapterUrl,username,text,timestamp:Date.now()});input.value='';}
+    catch{toast('Failed to post comment.');}
+});
+
+function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ── ADMIN TABS ── */
+document.querySelectorAll('.admin-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');$(btn.dataset.tab).classList.add('active');
+    });
+});
+
+/* ── ADMIN LISTS ── */
+function refreshAdminGenres(){
+    const list=$('adminGenresList');if(!list)return;
+    list.innerHTML=genres.length===0?`<li class="admin-list-row" style="color:var(--ink-4);font-style:italic;">No genres yet.</li>`:genres.map((g,i)=>`<li class="admin-list-row" style="animation-delay:${(i*0.04).toFixed(2)}s"><div><div class="admin-list-row-main">${g.name}</div><div class="admin-list-row-sub">${g.desc||''}</div></div><button class="action-btn delete" onclick="window._deleteGenre('${g.id}')" title="Delete genre"><i class="fas fa-trash"></i></button></li>`).join('');
+}
+function refreshAdminStories(){
+    const list=$('adminStoriesList');if(!list)return;
+    list.innerHTML=stories.length===0?`<li class="admin-list-row" style="color:var(--ink-4);font-style:italic;">No stories yet.</li>`:stories.map((s,i)=>{const g=genres.find(g=>g.id===s.genreId);return`<li class="admin-list-row" style="animation-delay:${(i*0.04).toFixed(2)}s"><div><div class="admin-list-row-main">${s.name}</div><div class="admin-list-row-sub">Genre: ${g?g.name:'—'} · Page size: ${s.pageSize||'A4'}</div></div><button class="action-btn delete" onclick="window._deleteStory('${s.id}')" title="Delete story"><i class="fas fa-trash"></i></button></li>`;}).join('');
+}
+function refreshAdminParts(){
+    const list=$('adminPartsList');if(!list)return;
+    list.innerHTML=parts.length===0?`<li class="admin-list-row" style="color:var(--ink-4);font-style:italic;">No chapters yet.</li>`:parts.map((p,i)=>{const s=stories.find(s=>s.id===p.storyId);return`<li class="admin-list-row" style="animation-delay:${(i*0.04).toFixed(2)}s"><div><div class="admin-list-row-main">${p.name}</div><div class="admin-list-row-sub">Story: ${s?s.name:'—'}</div></div><button class="action-btn delete" onclick="window._deletePart('${p.id}')" title="Delete chapter"><i class="fas fa-trash"></i></button></li>`;}).join('');
+}
+function renderUsersTable(){
+    const tbody=$('usersTableBody');if(!tbody)return;
+    if(siteUsers.length===0){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--ink-4);font-style:italic;padding:24px;">No registered users.</td></tr>`;return;}
+    tbody.innerHTML=siteUsers.map((user,i)=>{
+        const banned=user.banUntil&&user.banUntil>Date.now();
+        const badge=banned?`<span class="status-badge banned"><i class="fas fa-ban"></i>Banned</span>`:`<span class="status-badge active"><i class="fas fa-circle"></i>Active</span>`;
+        return`<tr id="urow-${user.id}" style="animation-delay:${(i*0.04).toFixed(2)}s"><td><b>${escapeHtml(user.username||'Anonymous')}</b></td><td>${escapeHtml(user.email||'—')}</td><td>${user.dob||'—'}</td><td>${badge}</td><td><button class="action-btn ban" onclick="window._banUser('${user.id}')">Ban</button><button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button></td></tr>`;
+    }).join('');
+}
+
+/* ── CASCADING DELETES (genres → stories → chapters) ── */
+window._deleteGenre=async function(genreId){
+    const genre=genres.find(g=>g.id===genreId);if(!genre)return;
+    const genreStories=stories.filter(s=>s.genreId===genreId);
+    const storyIds=genreStories.map(s=>s.id);
+    const genreParts=parts.filter(p=>storyIds.includes(p.storyId));
+    if(!confirm(`Delete "${genre.name}"? This will also permanently delete ${genreStories.length} stor${genreStories.length===1?'y':'ies'} and ${genreParts.length} chapter${genreParts.length!==1?'s':''} inside it.`))return;
+    try{
+        await Promise.all([
+            ...genreParts.map(p=>deleteDoc(doc(db,'parts',p.id))),
+            ...genreStories.map(s=>deleteDoc(doc(db,'stories',s.id))),
+            deleteDoc(doc(db,'genres',genreId))
+        ]);
+        toast('Genre and its contents deleted.');
+    }catch{ toast('Failed to delete genre.'); }
+};
+
+window._deleteStory=async function(storyId){
+    const story=stories.find(s=>s.id===storyId);if(!story)return;
+    const storyParts=parts.filter(p=>p.storyId===storyId);
+    if(!confirm(`Delete "${story.name}"? This will also permanently delete ${storyParts.length} chapter${storyParts.length!==1?'s':''} inside it.`))return;
+    try{
+        await Promise.all([
+            ...storyParts.map(p=>deleteDoc(doc(db,'parts',p.id))),
+            deleteDoc(doc(db,'stories',storyId))
+        ]);
+        toast('Story and its chapters deleted.');
+    }catch{ toast('Failed to delete story.'); }
+};
+
+window._deletePart=async function(partId){
+    const part=parts.find(p=>p.id===partId);if(!part)return;
+    if(!confirm(`Delete chapter "${part.name}"?`))return;
+    try{
+        await deleteDoc(doc(db,'parts',partId));
+        toast('Chapter deleted.');
+    }catch{ toast('Failed to delete chapter.'); }
+};
+
+
+window._banUser=async function(userId){
+    const d=parseInt(prompt('Ban for how many days?'),10);
+    if(isNaN(d)||d<=0)return;
+    await updateDoc(doc(db,'users',userId),{banUntil:Date.now()+d*86400000});
+    toast(`User banned for ${d} day${d!==1?'s':''}.`);
+};
+window._deleteUser=async function(userId){
+    const user=siteUsers.find(u=>u.id===userId);
+    if(!user)return;
+
+    if(!auth.currentUser){
+        toast('Sign in as your admin account first — deleting needs that.');
+        return;
+    }
+    if(!user.uid){
+        toast('This account has no linked login to remove — nothing to delete.');
+        return;
+    }
+    if(!confirm(`Permanently delete "${user.username||'this user'}"? This removes their login too — they will not be able to sign in again. This can't be undone.`))return;
+
+    const row=$(`urow-${userId}`);if(row){row.style.opacity='.4';row.style.transition='opacity .2s';}
+
+    try{
+        const deleteUserAccount = httpsCallable(fns,'deleteUserAccount');
+        await deleteUserAccount({ authUid: user.uid, docId: user.id });
+        toast('Account permanently deleted.');
+    }catch(err){
+        if(row)row.style.opacity='1';
+        const code = err && err.code;
+        if(code==='functions/permission-denied'){
+            toast("Your account isn't authorized to delete users.");
+        } else if(code==='functions/unauthenticated'){
+            toast('Sign in as your admin account first — deleting needs that.');
+        } else if(code==='functions/not-found' || code==='functions/internal'){
+            toast('Delete function isn\'t deployed yet — see DEPLOY.md.');
+        } else {
+            toast('Could not delete: ' + (err && err.message ? err.message : 'unknown error'));
+        }
+    }
+};
+
+/* ── GENRE DROPDOWN & STORY DATALIST ── */
+function refreshGenreDropdown(){
+    const sel=$('storyGenreSelect');if(!sel)return;
+    sel.innerHTML=genres.length===0?`<option value="">— No genres —</option>`:genres.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+}
+function refreshStoryDatalist(){
+    const dl=$('partStorySuggestions');if(!dl)return;
+    dl.innerHTML=stories.map(s=>`<option value="${s.name}">`).join('');
+}
+
+/* ── FAB ── */
+$('fabMain').addEventListener('click',e=>{e.stopPropagation();$('fabWrap').classList.toggle('open');});
+$('fabGenre').addEventListener('click',()=>{$('fabWrap').classList.remove('open');openModal('genreModal');});
+$('fabStory').addEventListener('click',()=>{$('fabWrap').classList.remove('open');openModal('storyModal');});
+$('fabPart').addEventListener('click', ()=>{
+    $('fabWrap').classList.remove('open');
+    document.querySelectorAll('.part-source-btn').forEach(b=>b.classList.toggle('active', b.dataset.source==='file'));
+    $('partFileField').style.display='block';
+    $('partTextField').style.display='none';
+    openModal('partModal');
+});
+
+/* ── SAVE GENRE ── */
+$('saveGenreBtn').addEventListener('click',async()=>{
+    const name=$('genreName').value.trim(),desc=$('genreDesc').value.trim();
+    if(!name){toast('Please enter a genre name.');return;}
+    await addDoc(collection(db,'genres'),{name,desc});
+    $('genreName').value='';$('genreDesc').value='';
+    refreshAdminGenres();
+    closeModal('genreModal');toast('Genre saved!');
+});
+
+/* ── SAVE STORY ── */
+$('saveStoryBtn').addEventListener('click',async()=>{
+    const name=$('storyName').value.trim(),desc=$('storyDesc').value.trim(),genreId=$('storyGenreSelect').value;
+    if(!name||!genreId){toast('Please fill in all fields.');return;}
+    await addDoc(collection(db,'stories'),{name,desc,genreId,pageSize:selectedSize});
+    $('storyName').value='';$('storyDesc').value='';
+    // Reset picker
+    document.querySelectorAll('.size-option').forEach(o=>o.classList.remove('selected'));
+    document.querySelector('.size-option[data-size="A4"]').classList.add('selected');
+    selectedSize='A4';
+    refreshAdminStories();
+    closeModal('storyModal');toast('Story saved!');
+});
+
+/* ── GENERATE A .DOCX FROM TYPED TEXT ──
+   Uses the docx library (loaded via <script src="https://unpkg.com/docx">) so
+   an admin can type a chapter straight into the box instead of preparing a
+   Word file first. Each new line becomes its own paragraph. */
+async function buildDocxFromText(title, text){
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
+    const paragraphs = text.split(/\n+/).map(l=>l.trim()).filter(Boolean)
+        .map(line=>new Paragraph({ children:[ new TextRun(line) ], spacing:{ after:200 } }));
+    if(paragraphs.length===0) paragraphs.push(new Paragraph({ children:[ new TextRun('') ] }));
+    const doc = new Document({
+        sections:[{
+            properties:{},
+            children:[
+                new Paragraph({ text: title, heading: HeadingLevel.HEADING_1 }),
+                ...paragraphs
+            ]
+        }]
+    });
+    return Packer.toBlob(doc);
+}
+
+/* ── UPLOAD A CHAPTER FILE TO CLOUDINARY, THEN SAVE THE part DOC ──
+   Shared by both the "Upload file" and "Type it in" paths below. */
+function uploadChapterFile(file, name, targetStory){
+    const progress=$('uploadProgress'), btn=$('savePartBtn');
+    btn.disabled=true; btn.textContent='Uploading…'; progress.style.display='block'; progress.textContent='0%';
+
+    const formData=new FormData();
+    formData.append('file',file);
+    formData.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);
+
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`);
+
+    xhr.upload.onprogress=e=>{
+        if(e.lengthComputable){
+            progress.textContent=`Uploading: ${Math.round((e.loaded/e.total)*100)}%`;
+        }
+    };
+
+    xhr.onload=async()=>{
+        if(xhr.status>=200&&xhr.status<300){
+            try{
+                const data=JSON.parse(xhr.responseText);
+                const url=data.secure_url;
+                await addDoc(collection(db,'parts'),{name,storyId:targetStory.id,fileUrl:url,fileName:file.name,createdAt:Date.now()});
+                $('partName').value='';$('partStorySearch').value='';$('partFile').value='';$('partText').value='';
+                progress.style.display='none';btn.disabled=false;btn.textContent='Upload chapter';
+                refreshAdminParts();
+                closeModal('partModal');toast('Chapter uploaded!');
+            }catch(e){
+                toast('Upload succeeded but saving failed: '+e.message);
+                btn.disabled=false;btn.textContent='Upload chapter';progress.style.display='none';
+            }
+        } else {
+            toast('Upload failed. Check your Cloudinary settings.');
+            btn.disabled=false;btn.textContent='Upload chapter';progress.style.display='none';
+        }
+    };
+
+    xhr.onerror=()=>{
+        toast('Upload failed. Check your connection.');
+        btn.disabled=false;btn.textContent='Upload chapter';progress.style.display='none';
+    };
+
+    xhr.send(formData);
+}
+
+/* ── SAVE PART (file upload OR typed text, auto-converted to .docx) ── */
+$('savePartBtn').addEventListener('click',async()=>{
+    const name=$('partName').value.trim(),storyInput=$('partStorySearch').value.trim();
+    const fileInput=$('partFile'), typedText=$('partText').value;
+    const sourceMode=document.querySelector('.part-source-btn.active')?.dataset.source||'file';
+
+    if(!name||!storyInput){toast('Please fill in the chapter name and story.');return;}
+    const targetStory=stories.find(s=>s.name.toLowerCase()===storyInput.toLowerCase());
+    if(!targetStory){toast('Story not found. Check the title.');return;}
+
+    if(sourceMode==='file'){
+        if(fileInput.files.length===0){toast('Please choose a .docx or .pdf file.');return;}
+        uploadChapterFile(fileInput.files[0], name, targetStory);
+    } else {
+        if(!typedText.trim()){toast('Please type the chapter text, or switch to Upload file.');return;}
+        const btn=$('savePartBtn');
+        btn.disabled=true;btn.textContent='Formatting…';
+        try{
+            const blob=await buildDocxFromText(name, typedText);
+            const safeName=(name.replace(/[^a-z0-9\-_ ]/gi,'').trim()||'chapter')+'.docx';
+            const file=new File([blob], safeName, { type: blob.type });
+            uploadChapterFile(file, name, targetStory);
+        }catch(err){
+            toast('Could not generate the document: '+(err.message||'unknown error'));
+            btn.disabled=false;btn.textContent='Upload chapter';
+        }
+    }
+});
+</script>
+</body>
+</html>

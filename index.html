@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhi Studios - Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
+    <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+        --accent:    #3b3bd4;
+        --accent-h:  #2828b8;
+        --ink:       #0f0f0f;
+        --ink-2:     #3a3a3a;
+        --ink-3:     #767676;
+        --ink-4:     #b8b8b8;
+        --surface:   #ffffff;
+        --surface-2: #f5f5f3;
+        --surface-3: #e8e8e4;
+        --danger:    #d93025;
+        --success:   #1a7f4b;
+        --r:         10px;
+        --panel-w:   44%;
+        --dur:       0.62s;
+        --ease:      cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    html, body {
+        min-height: 100%;
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #f5f5f3 0%, #eeede9 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    /* ─── SESSION CHECK OVERLAY ────────────────────── */
+    .session-check {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f5f5f3 0%, #eeede9 100%);
+        transition: opacity 0.25s ease;
+    }
+    .session-check.hide {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .session-spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid var(--surface-3);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: sessionSpin 0.7s linear infinite;
+    }
+    @keyframes sessionSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* ─── CARD WRAPPER ─────────────────────────────── */
+    .card {
+        position: relative;
+        width: 880px;
+        max-width: 100%;
+        min-height: 600px;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+        background: var(--surface);
+        animation: cardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cardEntrance {
+        from { opacity: 0; transform: translateY(24px) scale(0.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ─── FORM PANELS ─────── */
+    .form-panel {
+        position: absolute;
+        top: 0;
+        width: calc(100% - var(--panel-w));
+        height: 100%;
+        padding: 60px 52px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: var(--surface);
+        transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+        will-change: transform, opacity;
+        overflow-y: auto;
+    }
+
+    #signinPanel {
+        left: 0;
+        transform: translateX(0);
+        opacity: 1;
+        z-index: 2;
+    }
+
+    #signupPanel {
+        left: 0;
+        transform: translateX(100%);
+        opacity: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .card.signup-mode #signinPanel {
+        transform: translateX(-60px);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .card.signup-mode #signupPanel {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: all;
+        z-index: 2;
+    }
+
+    /* Stagger the fields in on whichever panel becomes active */
+    .form-panel .field,
+    .form-panel .submit-btn,
+    .form-panel .eyebrow,
+    .form-panel .form-heading {
+        animation: fieldRise 0.55s var(--ease) backwards;
+    }
+    #signinPanel .eyebrow        { animation-delay: 0.05s; }
+    #signinPanel .form-heading   { animation-delay: 0.10s; }
+    #signinPanel .field:nth-of-type(1) { animation-delay: 0.16s; }
+    #signinPanel .field:nth-of-type(2) { animation-delay: 0.22s; }
+    #signinPanel .submit-btn     { animation-delay: 0.28s; }
+
+    #signupForm .eyebrow         { animation-delay: 0.05s; }
+    #signupForm .form-heading    { animation-delay: 0.10s; }
+    #signupForm .field:nth-of-type(1) { animation-delay: 0.15s; }
+    #signupForm .field:nth-of-type(2) { animation-delay: 0.20s; }
+    #signupForm .field-row       { animation-delay: 0.25s; }
+    #signupForm .submit-btn      { animation-delay: 0.32s; }
+
+    @keyframes fieldRise {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── BRAND PANEL ──────── */
+    .brand-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: var(--panel-w);
+        height: 100%;
+        background: linear-gradient(135deg, var(--ink) 0%, #1a1a1a 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 52px 44px;
+        overflow: hidden;
+        transition: none;
+        z-index: 10;
+    }
+
+    .brand-panel::before {
+        content: '';
+        position: absolute;
+        top: -90px; right: -90px;
+        width: 280px; height: 280px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.16;
+        pointer-events: none;
+        animation: blobFloat 7s ease-in-out infinite;
+    }
+
+    .brand-panel::after {
+        content: '';
+        position: absolute;
+        bottom: -70px; left: -50px;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.09;
+        pointer-events: none;
+        animation: blobFloat 9s ease-in-out infinite reverse;
+    }
+
+    @keyframes blobFloat {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%      { transform: translate(-14px, 16px) scale(1.07); }
+    }
+
+    .card.signup-mode .brand-panel {
+        animation: panelToLeft var(--dur) var(--ease) forwards;
+    }
+
+    .card:not(.signup-mode) .brand-panel {
+        animation: panelToRight var(--dur) var(--ease) forwards;
+    }
+
+    @keyframes panelToLeft {
+        from { right: 0;    left: auto; }
+        to   { right: auto; left: 0;    }
+    }
+
+    @keyframes panelToRight {
+        from { right: auto; left: 0;    }
+        to   { right: 0;    left: auto; }
+    }
+
+    .card.no-anim .brand-panel { animation: none !important; }
+    .card.no-anim .brand-panel::before,
+    .card.no-anim .brand-panel::after { animation: blobFloat 8s ease-in-out infinite; }
+
+    /* ─── BRAND CONTENT ──────────────────────────── */
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .brand-logo-text {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.4px;
+    }
+
+    .brand-body {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+    }
+
+    .brand-content {
+        transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+        will-change: transform, opacity;
+    }
+
+    .brand-content.signin-content { display: block; }
+    .brand-content.signup-content { display: none; margin-top: -100%; }
+
+    .card.signup-mode .brand-content.signin-content {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    .card.signup-mode .brand-content.signup-content {
+        display: block;
+        transform: translateY(0);
+        opacity: 1;
+        margin-top: 0;
+    }
+
+    .brand-tagline {
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        line-height: 1.2;
+        color: #fff;
+        margin-bottom: 16px;
+        letter-spacing: -0.4px;
+        font-weight: 700;
+    }
+
+    .brand-sub {
+        font-size: 14px;
+        color: rgba(255,255,255,0.55);
+        line-height: 1.7;
+    }
+
+    .brand-footer { position: relative; z-index: 1; }
+
+    .brand-footer p {
+        font-size: 13px;
+        color: rgba(255,255,255,0.42);
+        margin-bottom: 14px;
+    }
+
+    .switch-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.1);
+        border: 1.5px solid rgba(255,255,255,0.18);
+        color: rgba(255,255,255,0.9);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 11px 22px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s;
+    }
+    .switch-btn:hover {
+        background: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.32);
+        transform: translateY(-2px);
+    }
+    .switch-btn:active { transform: scale(0.96); }
+
+    .switch-btn .arrow {
+        display: inline-block;
+        transition: transform 0.35s var(--ease);
+    }
+    .card.signup-mode .switch-btn .arrow { transform: rotate(180deg); }
+
+    /* ─── FORM FIELDS ──────────────────────────────── */
+    .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 8px;
+    }
+
+    .form-heading {
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        color: var(--ink);
+        margin-bottom: 28px;
+        letter-spacing: -0.4px;
+        font-weight: 700;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin-bottom: 7px;
+        letter-spacing: 0.2px;
+    }
+
+    .field input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1.5px solid var(--surface-3);
+        border-radius: 10px;
+        font-size: 15px;
+        font-family: 'Inter', sans-serif;
+        color: var(--ink);
+        background: var(--surface);
+        outline: none;
+        transition: all 0.2s;
+    }
+    .field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59,59,212,0.1);
+        background: #fafaff;
+        transform: translateY(-1px);
+    }
+    .field input::placeholder { color: var(--ink-4); }
+
+    /* Locked state once a submission is in flight / succeeded */
+    .field input:disabled {
+        background: var(--surface-2);
+        color: var(--ink-3);
+        cursor: not-allowed;
+        transform: none;
+        border-color: var(--surface-3);
+    }
+    .form-panel.locked .field label { color: var(--ink-4); }
+
+    .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        margin-top: 12px;
+        letter-spacing: 0.3px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(59,59,212,0.25);
+    }
+    .submit-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0);
+        transition: background 0.2s;
+    }
+    .submit-btn:hover { 
+        background: var(--accent-h);
+        box-shadow: 0 6px 16px rgba(59,59,212,0.35);
+        transform: translateY(-2px);
+    }
+    .submit-btn:hover::after { background: rgba(255,255,255,0.08); }
+    .submit-btn:active { transform: translateY(0) scale(0.98); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Spinner shown inside the button while a request is in flight */
+    .btn-spinner {
+        display: inline-block;
+        width: 14px; height: 14px;
+        border: 2px solid rgba(255,255,255,0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: -2px;
+        animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── ERROR / PASSWORD STRENGTH ───────────────── */
+    .error-msg {
+        display: none;
+        align-items: center;
+        gap: 9px;
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        color: var(--danger);
+        font-size: 13px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        margin-bottom: 14px;
+        animation: shake 0.38s ease;
+    }
+    .error-msg.show { display: flex; }
+
+    @keyframes shake {
+        0%,100% { transform: translateX(0); }
+        20%      { transform: translateX(-5px); }
+        40%      { transform: translateX(5px); }
+        60%      { transform: translateX(-3px); }
+        80%      { transform: translateX(3px); }
+    }
+
+    .strength-wrap { margin-top: 6px; }
+    .strength-bar {
+        height: 3px;
+        background: var(--surface-3);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    .strength-fill {
+        height: 100%;
+        border-radius: 2px;
+        width: 0%;
+        transition: width 0.3s ease, background 0.3s ease;
+    }
+    .strength-label {
+        font-size: 11px;
+        color: var(--ink-4);
+        margin-top: 5px;
+    }
+
+    /* ─── SUCCESS STATE (sign up) ─── */
+    @keyframes popIn {
+        0%   { opacity: 0; transform: scale(0.4); }
+        70%  { opacity: 1; transform: scale(1.08); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes checkDraw {
+        from { stroke-dashoffset: 24; }
+        to   { stroke-dashoffset: 0; }
+    }
+    .success-state svg polyline {
+        stroke-dasharray: 24;
+        stroke-dashoffset: 24;
+        animation: checkDraw 0.5s 0.15s ease forwards;
+    }
+    .success-state > div:nth-of-type(2) { animation: fieldRise 0.4s 0.25s var(--ease) backwards; }
+    .success-state > div:nth-of-type(3) { animation: fieldRise 0.4s 0.35s var(--ease) backwards; }
+
+    /* ─── MOBILE ───────────────────────────────────── */
+    @media (max-width: 660px) {
+        html, body { align-items: flex-start; overflow-y: auto; }
+        .card { border-radius: 0; min-height: 100vh; box-shadow: none; }
+        .brand-panel { position: relative; width: 100%; min-height: 220px; padding: 40px 28px; }
+        .card:not(.signup-mode) .brand-panel,
+        .card.signup-mode .brand-panel { animation: none !important; left: auto; right: auto; }
+        .form-panel { position: relative; width: 100%; padding: 40px 28px; transform: none !important; opacity: 1 !important; }
+        #signupPanel { display: none; }
+        .card.signup-mode #signinPanel { display: none; }
+        .card.signup-mode #signupPanel { display: flex; }
+        .field-row { grid-template-columns: 1fr; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- Shown briefly while we check for an existing session, so a returning
+     reader doesn't see the sign-in form flash before being sent straight in -->
+<div class="session-check" id="sessionCheck">
+    <div class="session-spinner"></div>
+</div>
+
+<div class="card no-anim" id="card">
+
+    <!-- ══ SIGN IN PANEL ══════════════════════════════ -->
+    <div class="form-panel" id="signinPanel">
+        <div class="eyebrow">Welcome back</div>
+        <h1 class="form-heading">Sign in</h1>
+
+        <div class="error-msg" id="siError">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="siErrorText"></span>
+        </div>
+
+        <div class="field">
+            <label>Email address</label>
+            <input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" id="siPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <button class="submit-btn" id="siBtn">Sign in</button>
+    </div>
+
+    <!-- ══ SIGN UP PANEL ══════════════════════════════ -->
+    <div class="form-panel" id="signupPanel">
+
+        <div id="signupForm">
+            <div class="eyebrow">New here</div>
+            <h1 class="form-heading">Create account</h1>
+
+            <div class="error-msg" id="suError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="suErrorText"></span>
+            </div>
+
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="suUsername" placeholder="e.g. aadhi_reads" autocomplete="username">
+            </div>
+            <div class="field">
+                <label>Email address</label>
+                <input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>Password</label>
+                    <input type="password" id="suPassword" placeholder="At least 6 chars" autocomplete="new-password">
+                    <div class="strength-wrap">
+                        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                        <div class="strength-label" id="strengthLabel"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Date of birth</label>
+                    <input type="date" id="suDob">
+                </div>
+            </div>
+
+            <button class="submit-btn" id="suBtn">Create account</button>
+        </div>
+
+        <!-- Success state -->
+        <div class="success-state" id="signupSuccess" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:20px 0;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <div style="font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px;">Account created!</div>
+            <div style="font-size:14px;color:var(--ink-3);">Taking you to your library…</div>
+        </div>
+    </div>
+
+    <!-- ══ BRAND PANEL ════════════════════════════════ -->
+    <div class="brand-panel" id="brandPanel">
+        <div class="brand-logo">
+            <span class="brand-logo-text">Aadhi Studios</span>
+        </div>
+
+        <div class="brand-body">
+            <div class="brand-content signin-content">
+                <p class="brand-tagline">Stories worth reading.</p>
+                <p class="brand-sub">Pick up where you left off.<br>Your library is waiting for you.</p>
+            </div>
+            <div class="brand-content signup-content">
+                <p class="brand-tagline">Start your story.</p>
+                <p class="brand-sub">Join Aadhi Studios and get access to every book, every chapter, every world.</p>
+            </div>
+        </div>
+
+        <div class="brand-footer">
+            <p id="switchPrompt">Don't have an account?</p>
+            <button class="switch-btn" id="switchBtn">
+                <span class="arrow">→</span>
+                <span id="switchLabel">Create one</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence }
+    from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, query, where }
+    from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const app  = initializeApp({
+    apiKey:            "AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
+    authDomain:        "aadhi-studios.firebaseapp.com",
+    projectId:         "aadhi-studios",
+    storageBucket:     "aadhi-studios.firebasestorage.app",
+    messagingSenderId: "1052163368305",
+    appId:             "1:1052163368305:web:c8c51c39c271659caa42d0"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// Explicit local persistence: once signed in, the session survives closing
+// the tab/browser and reopening it later, until the person signs out.
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+
+const card = document.getElementById('card');
+
+// ── STAY SIGNED IN ──────────────────────────────────────────────
+// Before showing the sign-in form at all, check whether there's already
+// a valid session. If so, skip straight to the library instead of making
+// a returning reader sign in again. A short safety timer guarantees the
+// form still appears even if the auth check is ever slow/stuck.
+const sessionCheck = document.getElementById('sessionCheck');
+let sessionResolved = false;
+
+function revealSignInForm(){
+    if (sessionResolved) return;
+    sessionResolved = true;
+    sessionCheck.classList.add('hide');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => card.classList.remove('no-anim'));
+    });
+}
+const sessionSafetyTimer = setTimeout(revealSignInForm, 4000);
+
+onAuthStateChanged(auth, user => {
+    if (user) {
+        sessionResolved = true;
+        clearTimeout(sessionSafetyTimer);
+        window.location.href = 'main.html';
+    } else {
+        clearTimeout(sessionSafetyTimer);
+        revealSignInForm();
+    }
+});
+
+let mode = 'signin';
+
+document.getElementById('switchBtn').addEventListener('click', () => {
+    mode = mode === 'signin' ? 'signup' : 'signin';
+    card.classList.toggle('signup-mode', mode === 'signup');
+    document.getElementById('switchPrompt').textContent =
+        mode === 'signup' ? 'Already have an account?' : "Don't have an account?";
+    document.getElementById('switchLabel').textContent =
+        mode === 'signup' ? 'Sign in' : 'Create one';
+    clearErrors();
+});
+
+function showError(panelId, msg) {
+    const errEl  = document.getElementById(panelId + 'Error');
+    const textEl = document.getElementById(panelId + 'ErrorText');
+    textEl.textContent = msg;
+    errEl.classList.remove('show');
+    // restart the shake animation even if the same error fires twice in a row
+    void errEl.offsetWidth;
+    errEl.classList.add('show');
+}
+function clearErrors() {
+    ['si','su'].forEach(p => document.getElementById(p + 'Error').classList.remove('show'));
+}
+
+function friendlyError(code) {
+    const map = {
+        'auth/user-not-found':      'No account found with that email.',
+        'auth/wrong-password':      'Incorrect password.',
+        'auth/invalid-credential':  'Email or password is incorrect.',
+        'auth/email-already-in-use':'An account with this email already exists.',
+        'auth/weak-password':       'Password must be at least 6 characters.',
+        'auth/invalid-email':       'Please enter a valid email address.',
+        'auth/too-many-requests':   'Too many attempts. Please wait and try again.'
+    };
+    return map[code] || 'Something went wrong. Please try again.';
+}
+
+const pwInput      = document.getElementById('suPassword');
+const strengthFill = document.getElementById('strengthFill');
+const strengthLbl  = document.getElementById('strengthLabel');
+
+pwInput.addEventListener('input', () => {
+    const pw  = pwInput.value;
+    let score = 0;
+    if (pw.length >= 6)  score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    const levels = [
+        { w:'0%',   bg:'',        label:'' },
+        { w:'25%',  bg:'#ef4444', label:'Weak' },
+        { w:'50%',  bg:'#f97316', label:'Fair' },
+        { w:'75%',  bg:'#eab308', label:'Good' },
+        { w:'100%', bg:'#22c55e', label:'Strong' },
+    ];
+    const lvl = levels[Math.min(score, 4)];
+    strengthFill.style.width      = pw.length ? lvl.w   : '0%';
+    strengthFill.style.background = lvl.bg;
+    strengthLbl.textContent       = pw.length ? lvl.label : '';
+});
+
+/* ── LOCK / UNLOCK A FORM'S INPUTS ──────────────────────────
+   Disables every input inside a panel so the data that was
+   just submitted can't be changed while the request is in
+   flight, and keeps it locked through the success state so
+   there's no window where a "created" account can still be
+   edited. Only unlocked again on a real, recoverable error. */
+function lockForm(panelEl) {
+    panelEl.classList.add('locked');
+    panelEl.querySelectorAll('input').forEach(el => el.disabled = true);
+}
+function unlockForm(panelEl) {
+    panelEl.classList.remove('locked');
+    panelEl.querySelectorAll('input').forEach(el => el.disabled = false);
+}
+
+document.getElementById('siBtn').addEventListener('click', handleSignIn);
+['siEmail','siPassword'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') handleSignIn();
+    });
+});
+
+async function handleSignIn() {
+    clearErrors();
+    const panel = document.getElementById('signinPanel');
+    const email = document.getElementById('siEmail').value.trim();
+    const pw    = document.getElementById('siPassword').value;
+    const btn   = document.getElementById('siBtn');
+
+    if (!email || !pw) { showError('si', 'Please fill in both fields.'); return; }
+
+    lockForm(panel);
+    btn.innerHTML = '<span class="btn-spinner"></span>Signing in…';
+    btn.disabled  = true;
+
+    try {
+        const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
+        if (!snap.empty) {
+            const u = snap.docs[0].data();
+            if (u.banUntil && u.banUntil > Date.now()) {
+                const days = Math.ceil((u.banUntil - Date.now()) / 86400000);
+                const durationText = days > 3650
+                    ? 'Your account has been permanently restricted.'
+                    : `Your account is restricted for another ${days} day${days!==1?'s':''}.`;
+                const reasonText = u.banReason ? ` Reason: ${u.banReason}` : '';
+                showError('si', `${durationText}${reasonText}`);
+                btn.textContent = 'Sign in'; btn.disabled = false;
+                unlockForm(panel);
+                return;
+            }
+        }
+        await signInWithEmailAndPassword(auth, email, pw);
+        // Success: keep the form locked — there's nothing left to edit before redirect.
+        btn.innerHTML = '✓ Signed in';
+        setTimeout(() => { window.location.href = 'main.html'; }, 500);
+    } catch (err) {
+        showError('si', friendlyError(err.code));
+        btn.textContent = 'Sign in'; btn.disabled = false;
+        unlockForm(panel);
+    }
+}
+
+document.getElementById('suBtn').addEventListener('click', handleSignUp);
+
+async function handleSignUp() {
+    clearErrors();
+    const panel    = document.getElementById('signupPanel');
+    const username = document.getElementById('suUsername').value.trim();
+    const email    = document.getElementById('suEmail').value.trim();
+    const pw       = document.getElementById('suPassword').value;
+    const dob      = document.getElementById('suDob').value;
+    const btn      = document.getElementById('suBtn');
+
+    if (!username || !email || !pw || !dob) { showError('su', 'Please fill in all fields.'); return; }
+    if (pw.length < 6) { showError('su', 'Password must be at least 6 characters.'); return; }
+
+    // Lock every field the instant "Create account" is pressed, so the
+    // submitted username/email/password/DOB can't be changed mid-request —
+    // and they stay locked once the account actually exists.
+    lockForm(panel);
+    btn.innerHTML = '<span class="btn-spinner"></span>Creating account…';
+    btn.disabled  = true;
+
+    try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pw);
+        await addDoc(collection(db, 'users'), {
+            uid:       cred.user.uid,
+            username,
+            email,
+            dob,
+            banUntil:  null,
+            createdAt: Date.now()
+        });
+
+        document.getElementById('signupForm').style.opacity    = '0';
+        document.getElementById('signupForm').style.transform  = 'translateY(-12px)';
+        document.getElementById('signupForm').style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        setTimeout(() => {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('signupSuccess').style.display = 'flex';
+        }, 300);
+
+        // Account now exists — form stays locked, no edits possible, until redirect.
+        setTimeout(() => { window.location.href = 'main.html'; }, 2200);
+
+    } catch (err) {
+        showError('su', friendlyError(err.code));
+        btn.textContent = 'Create account'; btn.disabled = false;
+        unlockForm(panel);
+    }
+}
+</script>
+</body>
+</html>

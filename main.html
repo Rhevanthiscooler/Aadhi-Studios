@@ -143,7 +143,7 @@
     /* Scrollable viewport that holds the page. touch-action:pan-y keeps native
        single-finger scroll but stops the browser from hijacking our 2-finger
        pinch (we handle that ourselves so everyone can zoom the page). */
-    .reader-viewport{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;position:relative;touch-action:pan-x pan-y;}
+    .reader-viewport{flex:1;min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;position:relative;touch-action:pan-x pan-y;}
     .reader-viewport.zoomed-wide{justify-content:flex-start;}
 
     /* Stage carries the fit-to-screen + user zoom scale and the 3D depth

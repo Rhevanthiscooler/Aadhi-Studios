@@ -40,6 +40,25 @@
         overflow-y: auto;
     }
 
+    /* ── MAINTENANCE BANNER ── */
+    .maintenance-banner {
+        position: fixed;
+        inset: 0;
+        background: #0f0f0f;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        text-align: center;
+        padding: 32px;
+        display: none;
+    }
+    .maintenance-banner.show { display: flex; }
+    .maintenance-banner i { font-size: 48px; color: #e07b00; margin-bottom: 20px; }
+    .maintenance-banner h1 { font-family: 'Playfair Display', serif; font-size: 32px; color: #fff; margin-bottom: 12px; }
+    .maintenance-banner p { font-size: 15px; color: rgba(255,255,255,.5); max-width: 380px; line-height: 1.7; }
+
     /* ─── CARD WRAPPER ─────────────────────────────── */
     .card {
         position: relative;
@@ -103,7 +122,6 @@
         z-index: 2;
     }
 
-    /* Stagger the fields in on whichever panel becomes active */
     .form-panel .field,
     .form-panel .submit-btn,
     .form-panel .eyebrow,
@@ -196,21 +214,14 @@
     .card.no-anim .brand-panel::before,
     .card.no-anim .brand-panel::after { animation: blobFloat 8s ease-in-out infinite; }
 
-    /* ─── BRAND CONTENT ──────────────────────────── */
-    .brand-logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        position: relative;
-        z-index: 1;
-    }
-    
     .brand-logo-text {
         font-family: 'Playfair Display', serif;
         font-size: 22px;
         font-weight: 700;
         color: #fff;
         letter-spacing: -0.4px;
+        position: relative;
+        z-index: 1;
     }
 
     .brand-body {
@@ -219,258 +230,76 @@
         overflow: hidden;
     }
 
-    .brand-content {
-        transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
-        will-change: transform, opacity;
-    }
-
+    .brand-content { transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease); will-change: transform, opacity; }
     .brand-content.signin-content { display: block; }
     .brand-content.signup-content { display: none; margin-top: -100%; }
 
-    .card.signup-mode .brand-content.signin-content {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-    .card.signup-mode .brand-content.signup-content {
-        display: block;
-        transform: translateY(0);
-        opacity: 1;
-        margin-top: 0;
-    }
+    .card.signup-mode .brand-content.signin-content { transform: translateY(-20px); opacity: 0; }
+    .card.signup-mode .brand-content.signup-content { display: block; transform: translateY(0); opacity: 1; margin-top: 0; }
 
-    .brand-tagline {
-        font-family: 'Playfair Display', serif;
-        font-size: 32px;
-        line-height: 1.2;
-        color: #fff;
-        margin-bottom: 16px;
-        letter-spacing: -0.4px;
-        font-weight: 700;
-    }
-
-    .brand-sub {
-        font-size: 14px;
-        color: rgba(255,255,255,0.55);
-        line-height: 1.7;
-    }
-
+    .brand-tagline { font-family: 'Playfair Display', serif; font-size: 32px; line-height: 1.2; color: #fff; margin-bottom: 16px; letter-spacing: -0.4px; font-weight: 700; }
+    .brand-sub { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.7; }
     .brand-footer { position: relative; z-index: 1; }
-
-    .brand-footer p {
-        font-size: 13px;
-        color: rgba(255,255,255,0.42);
-        margin-bottom: 14px;
-    }
+    .brand-footer p { font-size: 13px; color: rgba(255,255,255,0.42); margin-bottom: 14px; }
 
     .switch-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(255,255,255,0.1);
-        border: 1.5px solid rgba(255,255,255,0.18);
-        color: rgba(255,255,255,0.9);
-        font-size: 13px;
-        font-weight: 600;
-        padding: 11px 22px;
-        border-radius: 9px;
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-        transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.18);
+        color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600;
+        padding: 11px 22px; border-radius: 9px; cursor: pointer;
+        font-family: 'Inter', sans-serif; transition: all 0.2s;
     }
-    .switch-btn:hover {
-        background: rgba(255,255,255,0.15);
-        border-color: rgba(255,255,255,0.32);
-        transform: translateY(-2px);
-    }
+    .switch-btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.32); transform: translateY(-2px); }
     .switch-btn:active { transform: scale(0.96); }
-
-    .switch-btn .arrow {
-        display: inline-block;
-        transition: transform 0.35s var(--ease);
-    }
+    .switch-btn .arrow { display: inline-block; transition: transform 0.35s var(--ease); }
     .card.signup-mode .switch-btn .arrow { transform: rotate(180deg); }
 
-    /* ─── FORM FIELDS ──────────────────────────────── */
-    .eyebrow {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.4px;
-        text-transform: uppercase;
-        color: var(--accent);
-        margin-bottom: 8px;
-    }
-
-    .form-heading {
-        font-family: 'Playfair Display', serif;
-        font-size: 32px;
-        color: var(--ink);
-        margin-bottom: 28px;
-        letter-spacing: -0.4px;
-        font-weight: 700;
-    }
-
+    /* ─── FORM FIELDS ── */
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+    .form-heading { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--ink); margin-bottom: 28px; letter-spacing: -0.4px; font-weight: 700; }
     .field { margin-bottom: 16px; }
-
-    .field label {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--ink-2);
-        margin-bottom: 7px;
-        letter-spacing: 0.2px;
-    }
-
-    .field input {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1.5px solid var(--surface-3);
-        border-radius: 10px;
-        font-size: 15px;
-        font-family: 'Inter', sans-serif;
-        color: var(--ink);
-        background: var(--surface);
-        outline: none;
-        transition: all 0.2s;
-    }
-    .field input:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(59,59,212,0.1);
-        background: #fafaff;
-        transform: translateY(-1px);
-    }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 7px; letter-spacing: 0.2px; }
+    .field input { width: 100%; padding: 12px 15px; border: 1.5px solid var(--surface-3); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; color: var(--ink); background: var(--surface); outline: none; transition: all 0.2s; }
+    .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,59,212,0.1); background: #fafaff; transform: translateY(-1px); }
     .field input::placeholder { color: var(--ink-4); }
-
-    /* Locked state once a submission is in flight / succeeded */
-    .field input:disabled {
-        background: var(--surface-2);
-        color: var(--ink-3);
-        cursor: not-allowed;
-        transform: none;
-        border-color: var(--surface-3);
-    }
+    .field input:disabled { background: var(--surface-2); color: var(--ink-3); cursor: not-allowed; transform: none; border-color: var(--surface-3); }
     .form-panel.locked .field label { color: var(--ink-4); }
-
-    .field-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     .submit-btn {
-        width: 100%;
-        padding: 14px 16px;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        font-size: 15px;
-        font-weight: 700;
-        font-family: 'Inter', sans-serif;
-        cursor: pointer;
-        margin-top: 12px;
-        letter-spacing: 0.3px;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.2s;
-        box-shadow: 0 4px 12px rgba(59,59,212,0.25);
+        width: 100%; padding: 14px 16px; background: var(--accent); color: #fff; border: none;
+        border-radius: 10px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif;
+        cursor: pointer; margin-top: 12px; letter-spacing: 0.3px; position: relative; overflow: hidden;
+        transition: all 0.2s; box-shadow: 0 4px 12px rgba(59,59,212,0.25);
     }
-    .submit-btn::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: rgba(255,255,255,0);
-        transition: background 0.2s;
-    }
-    .submit-btn:hover { 
-        background: var(--accent-h);
-        box-shadow: 0 6px 16px rgba(59,59,212,0.35);
-        transform: translateY(-2px);
-    }
-    .submit-btn:hover::after { background: rgba(255,255,255,0.08); }
+    .submit-btn:hover { background: var(--accent-h); box-shadow: 0 6px 16px rgba(59,59,212,0.35); transform: translateY(-2px); }
     .submit-btn:active { transform: translateY(0) scale(0.98); }
     .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-    /* Spinner shown inside the button while a request is in flight */
-    .btn-spinner {
-        display: inline-block;
-        width: 14px; height: 14px;
-        border: 2px solid rgba(255,255,255,0.4);
-        border-top-color: #fff;
-        border-radius: 50%;
-        margin-right: 8px;
-        vertical-align: -2px;
-        animation: spin 0.7s linear infinite;
-    }
+    .btn-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; margin-right: 8px; vertical-align: -2px; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ─── ERROR / PASSWORD STRENGTH ───────────────── */
-    .error-msg {
-        display: none;
-        align-items: center;
-        gap: 9px;
-        background: #fef2f2;
-        border: 1.5px solid #fecaca;
-        color: var(--danger);
-        font-size: 13px;
-        padding: 10px 14px;
-        border-radius: 8px;
-        margin-bottom: 14px;
-        animation: shake 0.38s ease;
-    }
+    .error-msg { display: none; align-items: center; gap: 9px; background: #fef2f2; border: 1.5px solid #fecaca; color: var(--danger); font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; animation: shake 0.38s ease; }
     .error-msg.show { display: flex; }
 
-    @keyframes shake {
-        0%,100% { transform: translateX(0); }
-        20%      { transform: translateX(-5px); }
-        40%      { transform: translateX(5px); }
-        60%      { transform: translateX(-3px); }
-        80%      { transform: translateX(3px); }
-    }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
 
     .strength-wrap { margin-top: 6px; }
-    .strength-bar {
-        height: 3px;
-        background: var(--surface-3);
-        border-radius: 2px;
-        overflow: hidden;
-    }
-    .strength-fill {
-        height: 100%;
-        border-radius: 2px;
-        width: 0%;
-        transition: width 0.3s ease, background 0.3s ease;
-    }
-    .strength-label {
-        font-size: 11px;
-        color: var(--ink-4);
-        margin-top: 5px;
-    }
+    .strength-bar { height: 3px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+    .strength-fill { height: 100%; border-radius: 2px; width: 0%; transition: width 0.3s ease, background 0.3s ease; }
+    .strength-label { font-size: 11px; color: var(--ink-4); margin-top: 5px; }
 
-    /* ─── SUCCESS STATE (sign up) ─── */
-    @keyframes popIn {
-        0%   { opacity: 0; transform: scale(0.4); }
-        70%  { opacity: 1; transform: scale(1.08); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes checkDraw {
-        from { stroke-dashoffset: 24; }
-        to   { stroke-dashoffset: 0; }
-    }
-    .success-state svg polyline {
-        stroke-dasharray: 24;
-        stroke-dashoffset: 24;
-        animation: checkDraw 0.5s 0.15s ease forwards;
-    }
+    @keyframes popIn { 0%{opacity:0;transform:scale(0.4)} 70%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
+    @keyframes checkDraw { from{stroke-dashoffset:24} to{stroke-dashoffset:0} }
+    .success-state svg polyline { stroke-dasharray:24; stroke-dashoffset:24; animation:checkDraw 0.5s 0.15s ease forwards; }
     .success-state > div:nth-of-type(2) { animation: fieldRise 0.4s 0.25s var(--ease) backwards; }
     .success-state > div:nth-of-type(3) { animation: fieldRise 0.4s 0.35s var(--ease) backwards; }
 
-    /* ─── MOBILE ───────────────────────────────────── */
     @media (max-width: 660px) {
         html, body { align-items: flex-start; overflow-y: auto; }
         .card { border-radius: 0; min-height: 100vh; box-shadow: none; }
         .brand-panel { position: relative; width: 100%; min-height: 220px; padding: 40px 28px; }
-        .card:not(.signup-mode) .brand-panel,
-        .card.signup-mode .brand-panel { animation: none !important; left: auto; right: auto; }
+        .card:not(.signup-mode) .brand-panel, .card.signup-mode .brand-panel { animation: none !important; left: auto; right: auto; }
         .form-panel { position: relative; width: 100%; padding: 40px 28px; transform: none !important; opacity: 1 !important; }
         #signupPanel { display: none; }
         .card.signup-mode #signinPanel { display: none; }
@@ -481,9 +310,16 @@
 </head>
 <body>
 
+<!-- Maintenance banner (shown when maintenance mode is ON) -->
+<div class="maintenance-banner" id="maintenanceBanner">
+    <i class="fas fa-tools" style="font-family:'Font Awesome 6 Free';font-weight:900;">🔧</i>
+    <h1>Under Maintenance</h1>
+    <p>Aadhi Studios is currently undergoing maintenance. We'll be back shortly. Thanks for your patience!</p>
+</div>
+
 <div class="card no-anim" id="card">
 
-    <!-- ══ SIGN IN PANEL ══════════════════════════════ -->
+    <!-- SIGN IN PANEL -->
     <div class="form-panel" id="signinPanel">
         <div class="eyebrow">Welcome back</div>
         <h1 class="form-heading">Sign in</h1>
@@ -505,9 +341,8 @@
         <button class="submit-btn" id="siBtn">Sign in</button>
     </div>
 
-    <!-- ══ SIGN UP PANEL ══════════════════════════════ -->
+    <!-- SIGN UP PANEL -->
     <div class="form-panel" id="signupPanel">
-
         <div id="signupForm">
             <div class="eyebrow">New here</div>
             <h1 class="form-heading">Create account</h1>
@@ -545,7 +380,7 @@
 
         <!-- Success state -->
         <div class="success-state" id="signupSuccess" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:20px 0;">
-            <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                 </svg>
@@ -555,7 +390,7 @@
         </div>
     </div>
 
-    <!-- ══ BRAND PANEL ════════════════════════════════ -->
+    <!-- BRAND PANEL -->
     <div class="brand-panel" id="brandPanel">
         <div class="brand-logo">
             <span class="brand-logo-text">Aadhi Studios</span>
@@ -587,7 +422,7 @@
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, where }
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const app  = initializeApp({
@@ -601,21 +436,40 @@ const app  = initializeApp({
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-const card = document.getElementById('card');
+/* ── CHECK MAINTENANCE MODE ── */
+async function checkMaintenance(){
+    try {
+        const snap = await getDoc(doc(db,'config','site'));
+        if(snap.exists() && snap.data().maintenance === true){
+            document.getElementById('maintenanceBanner').classList.add('show');
+            document.getElementById('card').style.display = 'none';
+        }
+    } catch(e) { /* if config doesn't exist yet, ignore */ }
+}
+checkMaintenance();
 
-requestAnimationFrame(() => {
-    requestAnimationFrame(() => card.classList.remove('no-anim'));
-});
+/* ── LOG LOGIN ATTEMPT ── */
+async function logAttempt(email, result, detail=''){
+    try {
+        await addDoc(collection(db,'loginAttempts'),{
+            email,
+            result,   // 'success' | 'fail' | 'banned'
+            detail,
+            timestamp: Date.now()
+        });
+    } catch(e){ /* non-critical, don't block sign in */ }
+}
+
+const card = document.getElementById('card');
+requestAnimationFrame(() => { requestAnimationFrame(() => card.classList.remove('no-anim')); });
 
 let mode = 'signin';
 
 document.getElementById('switchBtn').addEventListener('click', () => {
     mode = mode === 'signin' ? 'signup' : 'signin';
     card.classList.toggle('signup-mode', mode === 'signup');
-    document.getElementById('switchPrompt').textContent =
-        mode === 'signup' ? 'Already have an account?' : "Don't have an account?";
-    document.getElementById('switchLabel').textContent =
-        mode === 'signup' ? 'Sign in' : 'Create one';
+    document.getElementById('switchPrompt').textContent = mode === 'signup' ? 'Already have an account?' : "Don't have an account?";
+    document.getElementById('switchLabel').textContent  = mode === 'signup' ? 'Sign in' : 'Create one';
     clearErrors();
 });
 
@@ -624,7 +478,6 @@ function showError(panelId, msg) {
     const textEl = document.getElementById(panelId + 'ErrorText');
     textEl.textContent = msg;
     errEl.classList.remove('show');
-    // restart the shake animation even if the same error fires twice in a row
     void errEl.offsetWidth;
     errEl.classList.add('show');
 }
@@ -657,7 +510,6 @@ pwInput.addEventListener('input', () => {
     if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
-
     const levels = [
         { w:'0%',   bg:'',        label:'' },
         { w:'25%',  bg:'#ef4444', label:'Weak' },
@@ -671,12 +523,6 @@ pwInput.addEventListener('input', () => {
     strengthLbl.textContent       = pw.length ? lvl.label : '';
 });
 
-/* ── LOCK / UNLOCK A FORM'S INPUTS ──────────────────────────
-   Disables every input inside a panel so the data that was
-   just submitted can't be changed while the request is in
-   flight, and keeps it locked through the success state so
-   there's no window where a "created" account can still be
-   edited. Only unlocked again on a real, recoverable error. */
 function lockForm(panelEl) {
     panelEl.classList.add('locked');
     panelEl.querySelectorAll('input').forEach(el => el.disabled = true);
@@ -688,9 +534,7 @@ function unlockForm(panelEl) {
 
 document.getElementById('siBtn').addEventListener('click', handleSignIn);
 ['siEmail','siPassword'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-        if (e.key === 'Enter') handleSignIn();
-    });
+    document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') handleSignIn(); });
 });
 
 async function handleSignIn() {
@@ -707,26 +551,32 @@ async function handleSignIn() {
     btn.disabled  = true;
 
     try {
+        // Check ban status
         const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
         if (!snap.empty) {
             const u = snap.docs[0].data();
             if (u.banUntil && u.banUntil > Date.now()) {
                 const days = Math.ceil((u.banUntil - Date.now()) / 86400000);
-                const durationText = days > 3650
+                const isPermanent = days > 3650;
+                const durationText = isPermanent
                     ? 'Your account has been permanently restricted.'
                     : `Your account is restricted for another ${days} day${days!==1?'s':''}.`;
                 const reasonText = u.banReason ? ` Reason: ${u.banReason}` : '';
                 showError('si', `${durationText}${reasonText}`);
+                await logAttempt(email, 'banned', isPermanent ? 'Permanent ban' : `Banned for ${days} more days`);
                 btn.textContent = 'Sign in'; btn.disabled = false;
                 unlockForm(panel);
                 return;
             }
         }
+
         await signInWithEmailAndPassword(auth, email, pw);
-        // Success: keep the form locked — there's nothing left to edit before redirect.
+        await logAttempt(email, 'success');
         btn.innerHTML = '✓ Signed in';
         setTimeout(() => { window.location.href = 'main.html'; }, 500);
+
     } catch (err) {
+        await logAttempt(email, 'fail', friendlyError(err.code));
         showError('si', friendlyError(err.code));
         btn.textContent = 'Sign in'; btn.disabled = false;
         unlockForm(panel);
@@ -747,9 +597,6 @@ async function handleSignUp() {
     if (!username || !email || !pw || !dob) { showError('su', 'Please fill in all fields.'); return; }
     if (pw.length < 6) { showError('su', 'Password must be at least 6 characters.'); return; }
 
-    // Lock every field the instant "Create account" is pressed, so the
-    // submitted username/email/password/DOB can't be changed mid-request —
-    // and they stay locked once the account actually exists.
     lockForm(panel);
     btn.innerHTML = '<span class="btn-spinner"></span>Creating account…';
     btn.disabled  = true;
@@ -765,15 +612,14 @@ async function handleSignUp() {
             createdAt: Date.now()
         });
 
-        document.getElementById('signupForm').style.opacity    = '0';
-        document.getElementById('signupForm').style.transform  = 'translateY(-12px)';
-        document.getElementById('signupForm').style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        document.getElementById('signupForm').style.opacity   = '0';
+        document.getElementById('signupForm').style.transform = 'translateY(-12px)';
+        document.getElementById('signupForm').style.transition= 'opacity 0.3s ease, transform 0.3s ease';
         setTimeout(() => {
             document.getElementById('signupForm').style.display = 'none';
             document.getElementById('signupSuccess').style.display = 'flex';
         }, 300);
 
-        // Account now exists — form stays locked, no edits possible, until redirect.
         setTimeout(() => { window.location.href = 'main.html'; }, 2200);
 
     } catch (err) {

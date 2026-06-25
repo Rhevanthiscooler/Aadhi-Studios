@@ -448,9 +448,11 @@
     <button class="fab-main" id="fabMain"><i class="fas fa-plus"></i></button>
 </div>
 
-<!-- Admin footer -->
-<div style="position:fixed;bottom:0;left:0;width:100%;text-align:center;padding:12px;background:var(--surface);border-top:1px solid var(--surface-3);z-index:200;" id="authorFooter">
+<!-- Admin/Owner footer -->
+<div style="position:fixed;bottom:0;left:0;width:100%;text-align:center;padding:12px;background:var(--surface);border-top:1px solid var(--surface-3);z-index:200;display:flex;align-items:center;justify-content:center;gap:24px;" id="authorFooter">
     <button style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;" id="authorBtn">Admin?</button>
+    <span style="color:var(--surface-3);font-size:13px;">|</span>
+    <button style="background:none;border:none;color:var(--ink-4);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;" id="ownerBtn">Owner?</button>
 </div>
 
 <!-- MODALS -->
@@ -547,6 +549,20 @@
             </div>
         </div>
         <button class="modal-submit-btn" id="confirmBanBtn">Ban user</button>
+    </div>
+</div>
+
+<!-- Owner password gate -->
+<div class="modal-overlay" id="ownerModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="ownerModal">×</button>
+        <div class="modal-heading"><i class="fas fa-crown" style="color:#e07b00;margin-right:8px;"></i>Owner access</div>
+        <div class="modal-field">
+            <label>Enter owner code</label>
+            <input type="password" id="ownerPassword" placeholder="••••••••" autocomplete="off">
+        </div>
+        <div id="ownerError" style="font-size:13px;color:var(--danger);margin-top:4px;display:none;"></div>
+        <button class="modal-submit-btn" id="ownerSubmitBtn" style="background:#e07b00;">Enter Owner Panel</button>
     </div>
 </div>
 
@@ -726,6 +742,34 @@ $('exitAdminBtn').addEventListener('click',()=>{
     $('settingsDropdown').classList.remove('open');
     toast('Exited admin mode.');
 });
+
+/* ── OWNER GATE ── */
+const OWNER_PASSWORD = '2K260813';
+
+$('ownerBtn').addEventListener('click',()=>{
+    $('ownerPassword').value='';
+    $('ownerError').style.display='none';
+    openModal('ownerModal');
+});
+
+$('ownerSubmitBtn').addEventListener('click',()=>{
+    const pw=$('ownerPassword').value, err=$('ownerError');
+    err.style.display='none';
+    if(pw !== OWNER_PASSWORD){
+        err.textContent='Incorrect owner code.';
+        err.style.display='block';
+        $('ownerPassword').value='';
+        const box=document.querySelector('#ownerModal .modal-box');
+        box.style.animation='none';
+        requestAnimationFrame(()=>{box.style.animation='popIn 0.2s cubic-bezier(.175,.885,.32,1.275), shakeModal 0.4s ease';});
+        return;
+    }
+    closeModal('ownerModal');
+    $('ownerPassword').value='';
+    document.querySelector('#ownerModal .modal-box').style.animation='';
+    window.location.href='owner.html';
+});
+$('ownerPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('ownerSubmitBtn').click();});
 
 /* ── READER ACCOUNT ── */
 onAuthStateChanged(auth,async user=>{

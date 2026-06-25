@@ -573,7 +573,7 @@
 import { initializeApp }     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, where, getDocs }
+import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, where, getDocs, increment }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { getFunctions, httpsCallable }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-functions.js";
@@ -1003,7 +1003,12 @@ function renderChaptersView(container){
         const row=document.createElement('li');
         row.className='chapter-row';
         row.style.animationDelay=(i*0.05)+'s';
-        row.onclick=()=>window._openChapter(p.fileUrl, encodeURIComponent(p.fileName), encodeURIComponent(p.name));
+        row.onclick=()=>{
+            // increment view count on the story
+            const storyRef=doc(db,'stories',story.id);
+            updateDoc(storyRef,{views:increment(1)}).catch(()=>{});
+            window._openChapter(p.fileUrl, encodeURIComponent(p.fileName), encodeURIComponent(p.name));
+        };
         row.innerHTML=`<span class="chapter-row-name"><i class="fas fa-file-alt"></i>${p.name}</span><button class="chapter-open-btn">Read</button>`;
         list.appendChild(row);
     });

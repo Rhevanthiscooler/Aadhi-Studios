@@ -451,8 +451,8 @@
 <!-- Admin/Owner footer -->
 <div style="position:fixed;bottom:0;left:0;width:100%;text-align:center;padding:12px;background:var(--surface);border-top:1px solid var(--surface-3);z-index:200;display:flex;align-items:center;justify-content:center;gap:24px;" id="authorFooter">
     <button style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;" id="authorBtn">Admin?</button>
-    <span style="color:var(--surface-3);font-size:13px;">|</span>
-    <button style="background:none;border:none;color:var(--ink-4);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;" id="ownerBtn">Owner?</button>
+    <span id="ownerSeparator" style="color:var(--surface-3);font-size:13px;display:none;">|</span>
+    <button id="ownerBtn" style="background:none;border:none;color:#e07b00;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:none;"><i class="fas fa-crown" style="margin-right:4px;"></i>Owner Panel</button>
 </div>
 
 <!-- MODALS -->
@@ -530,7 +530,7 @@
     </div>
 </div>
 
-<!-- Ban user -->
+<!-- Ban user (admin — preset days only, no permanent) -->
 <div class="modal-overlay" id="banModal">
     <div class="modal-box">
         <button class="modal-close" data-close="banModal">×</button>
@@ -545,24 +545,10 @@
                 <div class="size-option" data-days="1"><span class="size-option-label">1 day</span></div>
                 <div class="size-option selected" data-days="7"><span class="size-option-label">7 days</span></div>
                 <div class="size-option" data-days="30"><span class="size-option-label">30 days</span></div>
-                <div class="size-option" data-days="permanent"><span class="size-option-label">Permanent</span></div>
+                <div class="size-option" data-days="90"><span class="size-option-label">90 days</span></div>
             </div>
         </div>
         <button class="modal-submit-btn" id="confirmBanBtn">Ban user</button>
-    </div>
-</div>
-
-<!-- Owner password gate -->
-<div class="modal-overlay" id="ownerModal">
-    <div class="modal-box">
-        <button class="modal-close" data-close="ownerModal">×</button>
-        <div class="modal-heading"><i class="fas fa-crown" style="color:#e07b00;margin-right:8px;"></i>Owner access</div>
-        <div class="modal-field">
-            <label>Enter owner code</label>
-            <input type="password" id="ownerPassword" placeholder="••••••••" autocomplete="off">
-        </div>
-        <div id="ownerError" style="font-size:13px;color:var(--danger);margin-top:4px;display:none;"></div>
-        <button class="modal-submit-btn" id="ownerSubmitBtn" style="background:#e07b00;">Enter Owner Panel</button>
     </div>
 </div>
 
@@ -743,33 +729,12 @@ $('exitAdminBtn').addEventListener('click',()=>{
     toast('Exited admin mode.');
 });
 
-/* ── OWNER GATE ── */
-const OWNER_PASSWORD = '2K260813';
+/* ── OWNER GATE — only rhevanth@gmail.com sees the Owner button ── */
+const OWNER_EMAIL = 'rhevanth@gmail.com';
 
 $('ownerBtn').addEventListener('click',()=>{
-    $('ownerPassword').value='';
-    $('ownerError').style.display='none';
-    openModal('ownerModal');
-});
-
-$('ownerSubmitBtn').addEventListener('click',()=>{
-    const pw=$('ownerPassword').value, err=$('ownerError');
-    err.style.display='none';
-    if(pw !== OWNER_PASSWORD){
-        err.textContent='Incorrect owner code.';
-        err.style.display='block';
-        $('ownerPassword').value='';
-        const box=document.querySelector('#ownerModal .modal-box');
-        box.style.animation='none';
-        requestAnimationFrame(()=>{box.style.animation='popIn 0.2s cubic-bezier(.175,.885,.32,1.275), shakeModal 0.4s ease';});
-        return;
-    }
-    closeModal('ownerModal');
-    $('ownerPassword').value='';
-    document.querySelector('#ownerModal .modal-box').style.animation='';
     window.location.href='owner.html';
 });
-$('ownerPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('ownerSubmitBtn').click();});
 
 /* ── READER ACCOUNT ── */
 onAuthStateChanged(auth,async user=>{
@@ -780,9 +745,20 @@ onAuthStateChanged(auth,async user=>{
         }catch{ currentUsername='Reader'; }
         $('readerSignOutBtn').style.display='flex';
         $('readerSignOutBtn').innerHTML=`<i class="fas fa-sign-out-alt"></i> Sign out (${currentUsername})`;
+
+        // Show Owner button ONLY for rhevanth@gmail.com
+        if(user.email === OWNER_EMAIL){
+            $('ownerBtn').style.display='inline-block';
+            $('ownerSeparator').style.display='inline-block';
+        } else {
+            $('ownerBtn').style.display='none';
+            $('ownerSeparator').style.display='none';
+        }
     } else {
         currentUsername='Guest Reader';
         $('readerSignOutBtn').style.display='none';
+        $('ownerBtn').style.display='none';
+        $('ownerSeparator').style.display='none';
     }
 });
 
@@ -1380,7 +1356,7 @@ function renderUsersTable(){
         const banAction=banned
             ?`<button class="action-btn ban" onclick="window._unbanUser('${user.id}')">Unban</button>`
             :`<button class="action-btn ban" onclick="window._banUser('${user.id}')">Ban</button>`;
-        return`<tr id="urow-${user.id}" style="animation-delay:${(i*0.04).toFixed(2)}s"><td><b>${escapeHtml(user.username||'Anonymous')}</b></td><td>${escapeHtml(user.email||'—')}</td><td>${user.dob||'—'}</td><td>${badge}</td><td>${banAction}<button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button></td></tr>`;
+        return`<tr id="urow-${user.id}" style="animation-delay:${(i*0.04).toFixed(2)}s"><td><b>${escapeHtml(user.username||'Anonymous')}</b></td><td>${escapeHtml(user.email||'—')}</td><td>${user.dob||'—'}</td><td>${badge}</td><td>${banAction}</td></tr>`;
     }).join('');
 }
 
@@ -1437,14 +1413,14 @@ window._banUser=function(userId){
 $('confirmBanBtn').addEventListener('click',async()=>{
     if(!banTargetUserId)return;
     const reason=$('banReasonInput').value.trim();
-    const days=banDurationDays==='permanent'?36500:banDurationDays;
+    const days=banDurationDays;
     const banUntil=Date.now()+days*86400000;
     const btn=$('confirmBanBtn');
     btn.disabled=true;
     try{
         await updateDoc(doc(db,'users',banTargetUserId),{banUntil,banReason:reason||null});
         closeModal('banModal');
-        toast(banDurationDays==='permanent' ? 'User permanently banned.' : `User banned for ${banDurationDays} day${banDurationDays!==1?'s':''}.`);
+        toast(`User banned for ${days} day${days!==1?'s':''}.`);
     }catch(err){
         toast('Could not ban user: '+(err&&err.message?err.message:'unknown error'));
     }

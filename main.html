@@ -324,6 +324,34 @@
     .modal-submit-btn:active:not(:disabled){transform:scale(.97);}
     .modal-submit-btn:disabled{opacity:.6;cursor:not-allowed;}
 
+    /* ── ADVERTISEMENTS ── */
+    .ad-banner{width:100%;border-radius:12px;overflow:hidden;margin-bottom:24px;position:relative;cursor:pointer;animation:screenIn .4s cubic-bezier(.16,1,.3,1);}
+    .ad-banner img{width:100%;max-height:160px;object-fit:cover;display:block;}
+    .ad-banner-body{padding:14px 16px;background:var(--surface);border:1px solid var(--surface-3);border-top:none;border-radius:0 0 12px 12px;}
+    .ad-banner-title{font-weight:700;font-size:14px;margin-bottom:3px;}
+    .ad-banner-desc{font-size:12px;color:var(--ink-3);}
+    .ad-banner-label{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px;}
+    .ad-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:12px;overflow:hidden;margin-bottom:24px;cursor:pointer;animation:screenIn .4s cubic-bezier(.16,1,.3,1);position:relative;display:flex;align-items:stretch;}
+    .ad-card img{width:110px;object-fit:cover;flex-shrink:0;}
+    .ad-card-body{padding:16px;flex:1;}
+    .ad-card-label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
+    .ad-card-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+    .ad-card-desc{font-size:12px;color:var(--ink-3);}
+    /* Popup ad */
+    .ad-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .ad-popup-box{background:var(--surface);border-radius:16px;overflow:hidden;max-width:420px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2);animation:popIn .25s cubic-bezier(.34,1.56,.64,1);}
+    .ad-popup-img{width:100%;max-height:200px;object-fit:cover;display:block;}
+    .ad-popup-body{padding:20px;}
+    .ad-popup-label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+    .ad-popup-title{font-weight:700;font-size:18px;margin-bottom:6px;}
+    .ad-popup-desc{font-size:13px;color:var(--ink-3);margin-bottom:16px;}
+    .ad-popup-actions{display:flex;gap:10px;}
+    .ad-popup-btn{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .15s;}
+    .ad-popup-btn.primary{background:var(--accent);color:#fff;}
+    .ad-popup-btn.secondary{background:var(--surface-2);color:var(--ink-3);}
+    .ad-popup-btn:hover{opacity:.85;}
+
     @media(max-width:640px){
         #libraryScreen,#bookScreen,#adminScreen{padding:24px 16px 80px;}
         .reader-topbar{padding:0 12px;}
@@ -384,6 +412,7 @@
         <button class="admin-tab" data-tab="tabStories">Stories</button>
         <button class="admin-tab" data-tab="tabParts">Chapters</button>
         <button class="admin-tab" data-tab="tabUsers">Users</button>
+        <button class="admin-tab" data-tab="tabAds">Ads</button>
     </div>
     <div class="admin-card">
         <div class="admin-panel active" id="tabGenres"><ul id="adminGenresList" style="list-style:none;"></ul></div>
@@ -398,6 +427,7 @@
                 </table>
             </div>
         </div>
+        <div class="admin-panel" id="tabAds"><ul id="adminAdsList" style="list-style:none;"></ul></div>
     </div>
 </div>
 
@@ -444,6 +474,7 @@
         <button class="fab-option" id="fabGenre">Add genre</button>
         <button class="fab-option" id="fabStory">Add story</button>
         <button class="fab-option" id="fabPart">Add chapter</button>
+        <button class="fab-option" id="fabAd">Add advertisement</button>
     </div>
     <button class="fab-main" id="fabMain"><i class="fas fa-plus"></i></button>
 </div>
@@ -552,6 +583,50 @@
     </div>
 </div>
 
+<!-- Advertisement Modal -->
+<div class="modal-overlay" id="adModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="adModal">×</button>
+        <div class="modal-heading"><i class="fas fa-ad" style="color:var(--accent);margin-right:8px;"></i>Add Advertisement</div>
+
+        <div class="modal-field">
+            <label>Title / Headline</label>
+            <input type="text" id="adTitle" placeholder="e.g. New book out now!">
+        </div>
+
+        <div class="modal-field">
+            <label>Description</label>
+            <textarea id="adDesc" placeholder="Short text shown with the ad…" style="min-height:80px;"></textarea>
+        </div>
+
+        <div class="modal-field">
+            <label>Image</label>
+            <input type="file" id="adImage" accept="image/png,image/jpeg,image/webp,image/gif">
+            <div style="font-size:11px;color:var(--ink-4);margin-top:5px;">PNG, JPG, WEBP or GIF — recommended 1200×400px for banner.</div>
+        </div>
+
+        <div class="modal-field">
+            <label>Display style</label>
+            <div class="part-source-toggle" id="adStyleToggle">
+                <button type="button" class="part-source-btn active" data-style="banner">Banner</button>
+                <button type="button" class="part-source-btn" data-style="card">Card</button>
+                <button type="button" class="part-source-btn" data-style="popup">Popup</button>
+            </div>
+            <div style="font-size:11px;color:var(--ink-4);margin-top:6px;" id="adStyleHint">
+                <b>Banner</b> — full-width strip at the top of the library.
+            </div>
+        </div>
+
+        <div class="modal-field">
+            <label>Link <span style="font-weight:400;color:var(--ink-4);">(optional — where to go when tapped)</span></label>
+            <input type="url" id="adLink" placeholder="https://…">
+        </div>
+
+        <div id="adUploadProgress" style="font-size:12px;color:var(--ink-3);margin-top:6px;display:none;"></div>
+        <button class="modal-submit-btn" id="saveAdBtn">Save advertisement</button>
+    </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- SCRIPT -->
@@ -592,7 +667,7 @@ const PAGE_SIZES = {
 const ADMIN_PASSWORD = '130813';
 
 /* ── STATE ── */
-let genres=[], stories=[], parts=[], siteUsers=[];
+let genres=[], stories=[], parts=[], siteUsers=[], ads=[];
 let isAdmin=false;
 let currentStoryId=null;
 let currentStoryPageSize='A4';
@@ -661,6 +736,7 @@ document.querySelectorAll('.part-source-btn').forEach(btn=>{
 onSnapshot(collection(db,'genres'),snap=>{genres=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminGenres();refreshGenreDropdown();});
 onSnapshot(collection(db,'stories'),snap=>{stories=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminStories();refreshStoryDatalist();});
 onSnapshot(collection(db,'parts'),snap=>{parts=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminParts();});
+onSnapshot(collection(db,'ads'),snap=>{ads=snap.docs.map(d=>({id:d.id,...d.data()}));renderLibrary();refreshAdminAds();});
 
 function startUserListener(){
     if(unsubUsers)return;
@@ -807,6 +883,49 @@ function renderLibrary(){
 
 function renderGenresView(container){
     container.innerHTML='';
+
+    // ── POPUP ADS (shown once per session) ──
+    const popupAds=ads.filter(a=>a.active&&a.style==='popup');
+    if(popupAds.length>0&&!sessionStorage.getItem('adPopupShown')){
+        sessionStorage.setItem('adPopupShown','1');
+        const ad=popupAds[0];
+        setTimeout(()=>{
+            const overlay=document.createElement('div');
+            overlay.className='ad-popup-overlay';
+            overlay.innerHTML=`
+                <div class="ad-popup-box">
+                    ${ad.imageUrl?`<img class="ad-popup-img" src="${ad.imageUrl}" alt="Ad">`:''}
+                    <div class="ad-popup-body">
+                        <div class="ad-popup-label">Advertisement</div>
+                        <div class="ad-popup-title">${escapeHtml(ad.title)}</div>
+                        ${ad.desc?`<div class="ad-popup-desc">${escapeHtml(ad.desc)}</div>`:''}
+                        <div class="ad-popup-actions">
+                            ${ad.link?`<button class="ad-popup-btn primary" onclick="window.open('${escapeHtml(ad.link)}','_blank')">Learn more</button>`:''}
+                            <button class="ad-popup-btn secondary" onclick="this.closest('.ad-popup-overlay').remove()">Dismiss</button>
+                        </div>
+                    </div>
+                </div>`;
+            overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+            document.body.appendChild(overlay);
+        }, 800);
+    }
+
+    // ── BANNER ADS at top ──
+    const bannerAds=ads.filter(a=>a.active&&a.style==='banner');
+    bannerAds.forEach(ad=>{
+        const el=document.createElement('div');
+        el.className='ad-banner';
+        if(ad.link) el.onclick=()=>window.open(ad.link,'_blank');
+        el.innerHTML=`
+            <span class="ad-banner-label">Ad</span>
+            ${ad.imageUrl?`<img src="${ad.imageUrl}" alt="Ad">`:''}
+            <div class="ad-banner-body">
+                <div class="ad-banner-title">${escapeHtml(ad.title)}</div>
+                ${ad.desc?`<div class="ad-banner-desc">${escapeHtml(ad.desc)}</div>`:''}
+            </div>`;
+        container.appendChild(el);
+    });
+
     if(genres.length===0){
         container.innerHTML=`<div class="empty-state"><i class="fas fa-bookmark"></i><h3>No genres yet</h3><p>The admin hasn't added any genres yet.</p></div>`;
         return;
@@ -865,6 +984,21 @@ function renderGenresView(container){
             <button class="chapter-open-btn" onclick="event.stopPropagation();" style="pointer-events:none;opacity:0;">Open</button>
         `;
         list.appendChild(row);
+    });
+    // ── CARD ADS mixed in after genre list ──
+    const cardAds=ads.filter(a=>a.active&&a.style==='card');
+    cardAds.forEach(ad=>{
+        const el=document.createElement('li');
+        el.className='ad-card';
+        if(ad.link) el.onclick=()=>window.open(ad.link,'_blank');
+        el.innerHTML=`
+            ${ad.imageUrl?`<img src="${ad.imageUrl}" alt="Ad">`:''}
+            <div class="ad-card-body">
+                <div class="ad-card-label">Advertisement</div>
+                <div class="ad-card-title">${escapeHtml(ad.title)}</div>
+                ${ad.desc?`<div class="ad-card-desc">${escapeHtml(ad.desc)}</div>`:''}
+            </div>`;
+        list.appendChild(el);
     });
     container.appendChild(list);
 }
@@ -1399,6 +1533,29 @@ window._deletePart=async function(partId){
     }catch{ toast('Failed to delete chapter.'); }
 };
 
+function refreshAdminAds(){
+    const list=$('adminAdsList');if(!list)return;
+    if(ads.length===0){list.innerHTML=`<li class="admin-list-row" style="color:var(--ink-4);font-style:italic;">No advertisements yet.</li>`;return;}
+    list.innerHTML=ads.map((a,i)=>`<li class="admin-list-row" style="animation-delay:${(i*0.04).toFixed(2)}s">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+            ${a.imageUrl?`<img src="${a.imageUrl}" style="width:56px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;" />`:'<div style="width:56px;height:36px;background:var(--surface-3);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--ink-4);font-size:10px;">No img</div>'}
+            <div style="min-width:0;">
+                <div class="admin-list-row-main">${a.title||'Untitled'}</div>
+                <div class="admin-list-row-sub">Style: ${a.style||'banner'} · ${a.desc?a.desc.slice(0,40)+'…':''}</div>
+            </div>
+        </div>
+        <button class="action-btn delete" onclick="window._deleteAd('${a.id}')" title="Delete ad"><i class="fas fa-trash"></i></button>
+    </li>`).join('');
+}
+
+window._deleteAd=async function(adId){
+    if(!confirm('Delete this advertisement?'))return;
+    try{
+        await deleteDoc(doc(db,'ads',adId));
+        toast('Advertisement deleted.');
+    }catch{ toast('Failed to delete.'); }
+};
+
 window._banUser=function(userId){
     const user=siteUsers.find(u=>u.id===userId);
     if(!user)return;
@@ -1494,6 +1651,83 @@ $('fabPart').addEventListener('click', ()=>{
     $('partFileField').style.display='block';
     $('partTextField').style.display='none';
     openModal('partModal');
+});
+$('fabAd').addEventListener('click',()=>{
+    $('fabWrap').classList.remove('open');
+    $('adTitle').value='';$('adDesc').value='';$('adLink').value='';$('adImage').value='';
+    document.querySelectorAll('#adStyleToggle .part-source-btn').forEach(b=>b.classList.toggle('active',b.dataset.style==='banner'));
+    selectedAdStyle='banner';
+    $('adStyleHint').innerHTML='<b>Banner</b> — full-width strip at the top of the library.';
+    openModal('adModal');
+});
+
+/* ── AD STYLE TOGGLE ── */
+const adStyleHints={
+    banner:'<b>Banner</b> — full-width strip at the top of the library.',
+    card:'<b>Card</b> — a tile mixed in between genre/story rows.',
+    popup:'<b>Popup</b> — appears as an overlay when the reader opens the library.'
+};
+let selectedAdStyle='banner';
+document.querySelectorAll('#adStyleToggle .part-source-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('#adStyleToggle .part-source-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedAdStyle=btn.dataset.style;
+        $('adStyleHint').innerHTML=adStyleHints[selectedAdStyle]||'';
+    });
+});
+
+/* ── SAVE ADVERTISEMENT ── */
+$('saveAdBtn').addEventListener('click',async()=>{
+    const title=$('adTitle').value.trim();
+    const desc=$('adDesc').value.trim();
+    const link=$('adLink').value.trim();
+    const imageFile=$('adImage').files[0];
+    const btn=$('saveAdBtn');
+    const progress=$('adUploadProgress');
+
+    if(!title){toast('Please enter a title.');return;}
+
+    btn.disabled=true;
+
+    async function saveAdRecord(imageUrl=''){
+        await addDoc(collection(db,'ads'),{
+            title, desc, link, imageUrl,
+            style: selectedAdStyle,
+            active: true,
+            createdAt: Date.now()
+        });
+        $('adTitle').value='';$('adDesc').value='';$('adLink').value='';$('adImage').value='';
+        progress.style.display='none';
+        btn.disabled=false;btn.textContent='Save advertisement';
+        closeModal('adModal');
+        toast('Advertisement saved!');
+    }
+
+    if(imageFile){
+        btn.textContent='Uploading image…';
+        progress.style.display='block';progress.textContent='0%';
+        const formData=new FormData();
+        formData.append('file',imageFile);
+        formData.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);
+        const xhr=new XMLHttpRequest();
+        xhr.open('POST',`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+        xhr.upload.onprogress=e=>{if(e.lengthComputable)progress.textContent=`Uploading: ${Math.round((e.loaded/e.total)*100)}%`;};
+        xhr.onload=async()=>{
+            if(xhr.status>=200&&xhr.status<300){
+                const data=JSON.parse(xhr.responseText);
+                await saveAdRecord(data.secure_url);
+            } else {
+                toast('Image upload failed.');
+                btn.disabled=false;btn.textContent='Save advertisement';progress.style.display='none';
+            }
+        };
+        xhr.onerror=()=>{toast('Upload failed.');btn.disabled=false;btn.textContent='Save advertisement';progress.style.display='none';};
+        xhr.send(formData);
+    } else {
+        btn.textContent='Saving…';
+        await saveAdRecord('');
+    }
 });
 
 /* ── SAVE GENRE ── */

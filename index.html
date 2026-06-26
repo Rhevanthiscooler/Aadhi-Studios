@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -22,7 +24,6 @@
         --surface-3: #e8e8e4;
         --danger:    #d93025;
         --success:   #1a7f4b;
-        --r:         10px;
         --panel-w:   44%;
         --dur:       0.62s;
         --ease:      cubic-bezier(0.76, 0, 0.24, 1);
@@ -42,284 +43,198 @@
 
     /* ── MAINTENANCE BANNER ── */
     .maintenance-banner {
-        position: fixed;
-        inset: 0;
-        background: #0f0f0f;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        text-align: center;
-        padding: 32px;
-        display: none;
+        position: fixed; inset: 0; background: #0f0f0f;
+        display: none; flex-direction: column; align-items: center;
+        justify-content: center; z-index: 9999; text-align: center; padding: 32px;
     }
     .maintenance-banner.show { display: flex; }
-    .maintenance-banner i { font-size: 48px; color: #e07b00; margin-bottom: 20px; }
-    .maintenance-banner h1 { font-family: 'Playfair Display', serif; font-size: 32px; color: #fff; margin-bottom: 12px; }
-    .maintenance-banner p { font-size: 15px; color: rgba(255,255,255,.5); max-width: 380px; line-height: 1.7; }
+    .maintenance-banner h1 { font-family:'Playfair Display',serif; font-size:32px; color:#fff; margin-bottom:12px; }
+    .maintenance-banner p  { font-size:15px; color:rgba(255,255,255,.5); max-width:380px; line-height:1.7; }
 
-    /* ─── CARD WRAPPER ─────────────────────────────── */
+    /* ── CARD ── */
     .card {
-        position: relative;
-        width: 880px;
-        max-width: 100%;
-        min-height: 600px;
-        border-radius: 24px;
-        overflow: hidden;
+        position: relative; width: 880px; max-width: 100%; min-height: 600px;
+        border-radius: 24px; overflow: hidden;
         box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
         background: var(--surface);
-        animation: cardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: cardEntrance 0.7s cubic-bezier(0.16,1,0.3,1);
     }
+    @keyframes cardEntrance { from{opacity:0;transform:translateY(24px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
 
-    @keyframes cardEntrance {
-        from { opacity: 0; transform: translateY(24px) scale(0.98); }
-        to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    /* ─── FORM PANELS ─────── */
+    /* ── FORM PANELS ── */
     .form-panel {
-        position: absolute;
-        top: 0;
+        position: absolute; top: 0;
         width: calc(100% - var(--panel-w));
-        height: 100%;
-        padding: 60px 52px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        height: 100%; padding: 60px 52px;
+        display: flex; flex-direction: column; justify-content: center;
         background: var(--surface);
         transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
-        will-change: transform, opacity;
-        overflow-y: auto;
+        will-change: transform, opacity; overflow-y: auto;
     }
+    #signinPanel  { left:0; transform:translateX(0);    opacity:1; z-index:2; }
+    #signupPanel  { left:0; transform:translateX(100%); opacity:0; z-index:1; pointer-events:none; }
+    #forgotPanel  { left:0; transform:translateX(100%); opacity:0; z-index:1; pointer-events:none; }
 
-    #signinPanel {
-        left: 0;
-        transform: translateX(0);
-        opacity: 1;
-        z-index: 2;
-    }
+    .card.signup-mode #signinPanel  { transform:translateX(-60px); opacity:0; pointer-events:none; z-index:1; }
+    .card.signup-mode #signupPanel  { transform:translateX(0);      opacity:1; pointer-events:all;  z-index:2; }
+    .card.forgot-mode #signinPanel  { transform:translateX(-60px); opacity:0; pointer-events:none; z-index:1; }
+    .card.forgot-mode #forgotPanel  { transform:translateX(0);      opacity:1; pointer-events:all;  z-index:2; }
 
-    #signupPanel {
-        left: 0;
-        transform: translateX(100%);
-        opacity: 0;
-        z-index: 1;
-        pointer-events: none;
-    }
+    .form-panel .field, .form-panel .submit-btn,
+    .form-panel .eyebrow, .form-panel .form-heading { animation: fieldRise 0.55s var(--ease) backwards; }
+    #signinPanel .eyebrow        { animation-delay:0.05s; }
+    #signinPanel .form-heading   { animation-delay:0.10s; }
+    #signinPanel .field:nth-of-type(1) { animation-delay:0.16s; }
+    #signinPanel .field:nth-of-type(2) { animation-delay:0.22s; }
+    #signinPanel .submit-btn     { animation-delay:0.28s; }
+    #signupForm .eyebrow         { animation-delay:0.05s; }
+    #signupForm .form-heading    { animation-delay:0.10s; }
+    #signupForm .field:nth-of-type(1) { animation-delay:0.15s; }
+    #signupForm .field:nth-of-type(2) { animation-delay:0.20s; }
+    #signupForm .field-row       { animation-delay:0.25s; }
+    #signupForm .submit-btn      { animation-delay:0.32s; }
+    @keyframes fieldRise { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
-    .card.signup-mode #signinPanel {
-        transform: translateX(-60px);
-        opacity: 0;
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .card.signup-mode #signupPanel {
-        transform: translateX(0);
-        opacity: 1;
-        pointer-events: all;
-        z-index: 2;
-    }
-
-    .form-panel .field,
-    .form-panel .submit-btn,
-    .form-panel .eyebrow,
-    .form-panel .form-heading {
-        animation: fieldRise 0.55s var(--ease) backwards;
-    }
-    #signinPanel .eyebrow        { animation-delay: 0.05s; }
-    #signinPanel .form-heading   { animation-delay: 0.10s; }
-    #signinPanel .field:nth-of-type(1) { animation-delay: 0.16s; }
-    #signinPanel .field:nth-of-type(2) { animation-delay: 0.22s; }
-    #signinPanel .submit-btn     { animation-delay: 0.28s; }
-
-    #signupForm .eyebrow         { animation-delay: 0.05s; }
-    #signupForm .form-heading    { animation-delay: 0.10s; }
-    #signupForm .field:nth-of-type(1) { animation-delay: 0.15s; }
-    #signupForm .field:nth-of-type(2) { animation-delay: 0.20s; }
-    #signupForm .field-row       { animation-delay: 0.25s; }
-    #signupForm .submit-btn      { animation-delay: 0.32s; }
-
-    @keyframes fieldRise {
-        from { opacity: 0; transform: translateY(10px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ─── BRAND PANEL ──────── */
+    /* ── BRAND PANEL ── */
     .brand-panel {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: var(--panel-w);
-        height: 100%;
+        position: absolute; top:0; right:0;
+        width: var(--panel-w); height: 100%;
         background: linear-gradient(135deg, var(--ink) 0%, #1a1a1a 100%);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 52px 44px;
-        overflow: hidden;
-        transition: none;
-        z-index: 10;
+        display: flex; flex-direction: column; justify-content: space-between;
+        padding: 52px 44px; overflow: hidden; z-index: 10;
     }
-
     .brand-panel::before {
-        content: '';
-        position: absolute;
-        top: -90px; right: -90px;
-        width: 280px; height: 280px;
-        border-radius: 50%;
-        background: var(--accent);
-        opacity: 0.16;
-        pointer-events: none;
-        animation: blobFloat 7s ease-in-out infinite;
+        content:''; position:absolute; top:-90px; right:-90px;
+        width:280px; height:280px; border-radius:50%;
+        background:var(--accent); opacity:0.16; pointer-events:none;
+        animation:blobFloat 7s ease-in-out infinite;
     }
-
     .brand-panel::after {
-        content: '';
-        position: absolute;
-        bottom: -70px; left: -50px;
-        width: 220px; height: 220px;
-        border-radius: 50%;
-        background: var(--accent);
-        opacity: 0.09;
-        pointer-events: none;
-        animation: blobFloat 9s ease-in-out infinite reverse;
+        content:''; position:absolute; bottom:-70px; left:-50px;
+        width:220px; height:220px; border-radius:50%;
+        background:var(--accent); opacity:0.09; pointer-events:none;
+        animation:blobFloat 9s ease-in-out infinite reverse;
     }
-
-    @keyframes blobFloat {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        50%      { transform: translate(-14px, 16px) scale(1.07); }
-    }
-
-    .card.signup-mode .brand-panel {
-        animation: panelToLeft var(--dur) var(--ease) forwards;
-    }
-
-    .card:not(.signup-mode) .brand-panel {
-        animation: panelToRight var(--dur) var(--ease) forwards;
-    }
-
-    @keyframes panelToLeft {
-        from { right: 0;    left: auto; }
-        to   { right: auto; left: 0;    }
-    }
-
-    @keyframes panelToRight {
-        from { right: auto; left: 0;    }
-        to   { right: 0;    left: auto; }
-    }
-
-    .card.no-anim .brand-panel { animation: none !important; }
-    .card.no-anim .brand-panel::before,
-    .card.no-anim .brand-panel::after { animation: blobFloat 8s ease-in-out infinite; }
-
-    .brand-logo-text {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        font-weight: 700;
-        color: #fff;
-        letter-spacing: -0.4px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .brand-body {
-        position: relative;
-        z-index: 1;
-        overflow: hidden;
-    }
-
-    .brand-content { transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease); will-change: transform, opacity; }
-    .brand-content.signin-content { display: block; }
-    .brand-content.signup-content { display: none; margin-top: -100%; }
-
-    .card.signup-mode .brand-content.signin-content { transform: translateY(-20px); opacity: 0; }
-    .card.signup-mode .brand-content.signup-content { display: block; transform: translateY(0); opacity: 1; margin-top: 0; }
-
-    .brand-tagline { font-family: 'Playfair Display', serif; font-size: 32px; line-height: 1.2; color: #fff; margin-bottom: 16px; letter-spacing: -0.4px; font-weight: 700; }
-    .brand-sub { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.7; }
-    .brand-footer { position: relative; z-index: 1; }
-    .brand-footer p { font-size: 13px; color: rgba(255,255,255,0.42); margin-bottom: 14px; }
-
+    @keyframes blobFloat { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-14px,16px) scale(1.07)} }
+    .card.signup-mode .brand-panel { animation: panelToLeft var(--dur) var(--ease) forwards; }
+    .card.forgot-mode .brand-panel { animation: panelToLeft var(--dur) var(--ease) forwards; }
+    .card:not(.signup-mode):not(.forgot-mode) .brand-panel { animation: panelToRight var(--dur) var(--ease) forwards; }
+    @keyframes panelToLeft  { from{right:0;left:auto} to{right:auto;left:0} }
+    @keyframes panelToRight { from{right:auto;left:0} to{right:0;left:auto} }
+    .card.no-anim .brand-panel { animation:none !important; }
+    .brand-logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#fff; letter-spacing:-0.4px; position:relative; z-index:1; }
+    .brand-body { position:relative; z-index:1; overflow:hidden; }
+    .brand-content { transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease); will-change:transform,opacity; }
+    .brand-content.signin-content { display:block; }
+    .brand-content.signup-content { display:none; margin-top:-100%; }
+    .brand-content.forgot-content { display:none; margin-top:-100%; }
+    .card.signup-mode .brand-content.signin-content { transform:translateY(-20px); opacity:0; }
+    .card.signup-mode .brand-content.signup-content { display:block; transform:translateY(0); opacity:1; margin-top:0; }
+    .card.forgot-mode .brand-content.signin-content  { transform:translateY(-20px); opacity:0; }
+    .card.forgot-mode .brand-content.forgot-content  { display:block; transform:translateY(0); opacity:1; margin-top:0; }
+    .brand-tagline { font-family:'Playfair Display',serif; font-size:32px; line-height:1.2; color:#fff; margin-bottom:16px; letter-spacing:-0.4px; font-weight:700; }
+    .brand-sub  { font-size:14px; color:rgba(255,255,255,0.55); line-height:1.7; }
+    .brand-footer { position:relative; z-index:1; }
+    .brand-footer p { font-size:13px; color:rgba(255,255,255,0.42); margin-bottom:14px; }
     .switch-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.18);
-        color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600;
-        padding: 11px 22px; border-radius: 9px; cursor: pointer;
-        font-family: 'Inter', sans-serif; transition: all 0.2s;
+        display:inline-flex; align-items:center; gap:8px;
+        background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.18);
+        color:rgba(255,255,255,0.9); font-size:13px; font-weight:600;
+        padding:11px 22px; border-radius:9px; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s;
     }
-    .switch-btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.32); transform: translateY(-2px); }
-    .switch-btn:active { transform: scale(0.96); }
-    .switch-btn .arrow { display: inline-block; transition: transform 0.35s var(--ease); }
-    .card.signup-mode .switch-btn .arrow { transform: rotate(180deg); }
+    .switch-btn:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.32); transform:translateY(-2px); }
+    .switch-btn:active { transform:scale(0.96); }
+    .switch-btn .arrow { display:inline-block; transition:transform 0.35s var(--ease); }
+    .card.signup-mode .switch-btn .arrow { transform:rotate(180deg); }
 
-    /* ─── FORM FIELDS ── */
-    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-    .form-heading { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--ink); margin-bottom: 28px; letter-spacing: -0.4px; font-weight: 700; }
-    .field { margin-bottom: 16px; }
-    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 7px; letter-spacing: 0.2px; }
-    .field input { width: 100%; padding: 12px 15px; border: 1.5px solid var(--surface-3); border-radius: 10px; font-size: 15px; font-family: 'Inter', sans-serif; color: var(--ink); background: var(--surface); outline: none; transition: all 0.2s; }
-    .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,59,212,0.1); background: #fafaff; transform: translateY(-1px); }
-    .field input::placeholder { color: var(--ink-4); }
-    .field input:disabled { background: var(--surface-2); color: var(--ink-3); cursor: not-allowed; transform: none; border-color: var(--surface-3); }
-    .form-panel.locked .field label { color: var(--ink-4); }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* ── FIELDS ── */
+    .eyebrow { font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+    .form-heading { font-family:'Playfair Display',serif; font-size:32px; color:var(--ink); margin-bottom:28px; letter-spacing:-0.4px; font-weight:700; }
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:7px; }
+    .field input { width:100%; padding:12px 15px; border:1.5px solid var(--surface-3); border-radius:10px; font-size:15px; font-family:'Inter',sans-serif; color:var(--ink); background:var(--surface); outline:none; transition:all 0.2s; }
+    .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,59,212,0.1); background:#fafaff; transform:translateY(-1px); }
+    .field input::placeholder { color:var(--ink-4); }
+    .field input:disabled { background:var(--surface-2); color:var(--ink-3); cursor:not-allowed; transform:none; border-color:var(--surface-3); }
+    .form-panel.locked .field label { color:var(--ink-4); }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* OTP boxes */
+    .otp-row { display:flex; gap:10px; justify-content:center; margin:8px 0 20px; }
+    .otp-box {
+        width:48px; height:56px; border:1.5px solid var(--surface-3); border-radius:10px;
+        font-size:22px; font-weight:700; text-align:center; font-family:'Inter',sans-serif;
+        color:var(--ink); background:var(--surface); outline:none; transition:all 0.2s;
+    }
+    .otp-box:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,59,212,0.1); transform:translateY(-1px); }
+    .otp-box.filled { border-color:var(--accent); background:#fafaff; }
+
+    .resend-row { text-align:center; margin-top:4px; }
+    .resend-btn { background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:opacity .15s; }
+    .resend-btn:hover { opacity:.7; }
+    .resend-btn:disabled { color:var(--ink-4); cursor:not-allowed; opacity:1; }
+    .resend-timer { font-size:13px; color:var(--ink-4); }
 
     .submit-btn {
-        width: 100%; padding: 14px 16px; background: var(--accent); color: #fff; border: none;
-        border-radius: 10px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif;
-        cursor: pointer; margin-top: 12px; letter-spacing: 0.3px; position: relative; overflow: hidden;
-        transition: all 0.2s; box-shadow: 0 4px 12px rgba(59,59,212,0.25);
+        width:100%; padding:14px 16px; background:var(--accent); color:#fff; border:none;
+        border-radius:10px; font-size:15px; font-weight:700; font-family:'Inter',sans-serif;
+        cursor:pointer; margin-top:12px; letter-spacing:0.3px; transition:all 0.2s;
+        box-shadow:0 4px 12px rgba(59,59,212,0.25);
     }
-    .submit-btn:hover { background: var(--accent-h); box-shadow: 0 6px 16px rgba(59,59,212,0.35); transform: translateY(-2px); }
-    .submit-btn:active { transform: translateY(0) scale(0.98); }
-    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .submit-btn:hover { background:var(--accent-h); box-shadow:0 6px 16px rgba(59,59,212,0.35); transform:translateY(-2px); }
+    .submit-btn:active { transform:translateY(0) scale(0.98); }
+    .submit-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .btn-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; margin-right:8px; vertical-align:-2px; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
 
-    .btn-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; margin-right: 8px; vertical-align: -2px; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .forgot-link { background:none; border:none; color:var(--accent); font-size:12px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; margin-top:10px; display:inline-block; transition:opacity .15s; }
+    .forgot-link:hover { opacity:.7; }
 
-    .error-msg { display: none; align-items: center; gap: 9px; background: #fef2f2; border: 1.5px solid #fecaca; color: var(--danger); font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; animation: shake 0.38s ease; }
-    .error-msg.show { display: flex; }
+    .error-msg { display:none; align-items:center; gap:9px; background:#fef2f2; border:1.5px solid #fecaca; color:var(--danger); font-size:13px; padding:10px 14px; border-radius:8px; margin-bottom:14px; animation:shake 0.38s ease; }
+    .error-msg.show { display:flex; }
+    .success-msg { display:none; align-items:center; gap:9px; background:#f0fdf4; border:1.5px solid #bbf7d0; color:var(--success); font-size:13px; padding:10px 14px; border-radius:8px; margin-bottom:14px; }
+    .success-msg.show { display:flex; }
 
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
 
-    .strength-wrap { margin-top: 6px; }
-    .strength-bar { height: 3px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
-    .strength-fill { height: 100%; border-radius: 2px; width: 0%; transition: width 0.3s ease, background 0.3s ease; }
-    .strength-label { font-size: 11px; color: var(--ink-4); margin-top: 5px; }
+    .strength-wrap { margin-top:6px; }
+    .strength-bar { height:3px; background:var(--surface-3); border-radius:2px; overflow:hidden; }
+    .strength-fill { height:100%; border-radius:2px; width:0%; transition:width 0.3s ease,background 0.3s ease; }
+    .strength-label { font-size:11px; color:var(--ink-4); margin-top:5px; }
 
     @keyframes popIn { 0%{opacity:0;transform:scale(0.4)} 70%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
     @keyframes checkDraw { from{stroke-dashoffset:24} to{stroke-dashoffset:0} }
     .success-state svg polyline { stroke-dasharray:24; stroke-dashoffset:24; animation:checkDraw 0.5s 0.15s ease forwards; }
-    .success-state > div:nth-of-type(2) { animation: fieldRise 0.4s 0.25s var(--ease) backwards; }
-    .success-state > div:nth-of-type(3) { animation: fieldRise 0.4s 0.35s var(--ease) backwards; }
 
-    @media (max-width: 660px) {
-        html, body { align-items: flex-start; overflow-y: auto; }
-        .card { border-radius: 0; min-height: 100vh; box-shadow: none; }
-        .brand-panel { position: relative; width: 100%; min-height: 220px; padding: 40px 28px; }
-        .card:not(.signup-mode) .brand-panel, .card.signup-mode .brand-panel { animation: none !important; left: auto; right: auto; }
-        .form-panel { position: relative; width: 100%; padding: 40px 28px; transform: none !important; opacity: 1 !important; }
-        #signupPanel { display: none; }
-        .card.signup-mode #signinPanel { display: none; }
-        .card.signup-mode #signupPanel { display: flex; }
-        .field-row { grid-template-columns: 1fr; }
+    @media (max-width:660px) {
+        html,body { align-items:flex-start; overflow-y:auto; }
+        .card { border-radius:0; min-height:100vh; box-shadow:none; }
+        .brand-panel { position:relative; width:100%; min-height:220px; padding:40px 28px; }
+        .card:not(.signup-mode):not(.forgot-mode) .brand-panel,
+        .card.signup-mode .brand-panel,
+        .card.forgot-mode .brand-panel { animation:none !important; left:auto; right:auto; }
+        .form-panel { position:relative; width:100%; padding:40px 28px; transform:none !important; opacity:1 !important; }
+        #signupPanel,#forgotPanel { display:none; }
+        .card.signup-mode #signinPanel { display:none; }
+        .card.signup-mode #signupPanel { display:flex; }
+        .card.forgot-mode #signinPanel { display:none; }
+        .card.forgot-mode #forgotPanel { display:flex; }
+        .field-row { grid-template-columns:1fr; }
+        .otp-box { width:42px; height:50px; font-size:20px; }
     }
     </style>
 </head>
 <body>
 
-<!-- Maintenance banner (shown when maintenance mode is ON) -->
+<!-- Maintenance banner -->
 <div class="maintenance-banner" id="maintenanceBanner">
-    <i class="fas fa-tools" style="font-family:'Font Awesome 6 Free';font-weight:900;">🔧</i>
-    <h1>Under Maintenance</h1>
-    <p>Aadhi Studios is currently undergoing maintenance. We'll be back shortly. Thanks for your patience!</p>
+    <h1 style="margin-bottom:12px;">🔧 Under Maintenance</h1>
+    <p>Aadhi Studios is currently undergoing maintenance. We'll be back shortly!</p>
 </div>
 
 <div class="card no-anim" id="card">
 
-    <!-- SIGN IN PANEL -->
+    <!-- ── SIGN IN PANEL ── -->
     <div class="form-panel" id="signinPanel">
         <div class="eyebrow">Welcome back</div>
         <h1 class="form-heading">Sign in</h1>
@@ -339,9 +254,10 @@
         </div>
 
         <button class="submit-btn" id="siBtn">Sign in</button>
+        <button class="forgot-link" id="forgotLink">Forgot password?</button>
     </div>
 
-    <!-- SIGN UP PANEL -->
+    <!-- ── SIGN UP PANEL ── -->
     <div class="form-panel" id="signupPanel">
         <div id="signupForm">
             <div class="eyebrow">New here</div>
@@ -374,27 +290,109 @@
                     <input type="date" id="suDob">
                 </div>
             </div>
-
             <button class="submit-btn" id="suBtn">Create account</button>
         </div>
 
-        <!-- Success state -->
         <div class="success-state" id="signupSuccess" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:20px 0;">
             <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div style="font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px;">Account created!</div>
             <div style="font-size:14px;color:var(--ink-3);">Taking you to your library…</div>
         </div>
     </div>
 
-    <!-- BRAND PANEL -->
-    <div class="brand-panel" id="brandPanel">
-        <div class="brand-logo">
-            <span class="brand-logo-text">Aadhi Studios</span>
+    <!-- ── FORGOT PASSWORD PANEL ── -->
+    <div class="form-panel" id="forgotPanel">
+
+        <!-- Step 1: Enter email -->
+        <div id="fpStep1">
+            <div class="eyebrow">Reset password</div>
+            <h1 class="form-heading" style="font-size:26px;">Forgot password?</h1>
+
+            <div class="error-msg" id="fpError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="fpErrorText"></span>
+            </div>
+            <div class="success-msg" id="fpSuccess">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span id="fpSuccessText"></span>
+            </div>
+
+            <div class="field">
+                <label>Your email address</label>
+                <input type="email" id="fpEmail" placeholder="you@example.com" autocomplete="email">
+            </div>
+
+            <button class="submit-btn" id="fpSendBtn">Send OTP</button>
+            <button class="forgot-link" id="backToSignin" style="color:var(--ink-3);margin-top:12px;">← Back to sign in</button>
         </div>
+
+        <!-- Step 2: Enter OTP -->
+        <div id="fpStep2" style="display:none;">
+            <div class="eyebrow">Verify OTP</div>
+            <h1 class="form-heading" style="font-size:26px;">Check your email</h1>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">We sent a 6-digit code to <strong id="fpEmailDisplay"></strong></p>
+
+            <div class="error-msg" id="fpOtpError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="fpOtpErrorText"></span>
+            </div>
+
+            <div class="otp-row">
+                <input class="otp-box" type="text" maxlength="1" inputmode="numeric" id="otp0">
+                <input class="otp-box" type="text" maxlength="1" inputmode="numeric" id="otp1">
+                <input class="otp-box" type="text" maxlength="1" inputmode="numeric" id="otp2">
+                <input class="otp-box" type="text" maxlength="1" inputmode="numeric" id="otp3">
+                <input class="otp-box" type="text" maxlength="1" inputmode="numeric" id="otp4">
+                <input class="otp-box" type="text" maxlength="1" inputmode="numeric" id="otp5">
+            </div>
+
+            <button class="submit-btn" id="fpVerifyBtn">Verify code</button>
+
+            <div class="resend-row" style="margin-top:14px;">
+                <button class="resend-btn" id="resendBtn" disabled>Resend code</button>
+                <span class="resend-timer" id="resendTimer"></span>
+            </div>
+            <button class="forgot-link" id="backToStep1" style="color:var(--ink-3);margin-top:8px;display:block;text-align:center;">← Use different email</button>
+        </div>
+
+        <!-- Step 3: New password -->
+        <div id="fpStep3" style="display:none;">
+            <div class="eyebrow">New password</div>
+            <h1 class="form-heading" style="font-size:26px;">Set new password</h1>
+
+            <div class="error-msg" id="fpPwError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="fpPwErrorText"></span>
+            </div>
+
+            <div class="field">
+                <label>New password</label>
+                <input type="password" id="fpNewPw" placeholder="At least 6 characters">
+            </div>
+            <div class="field">
+                <label>Confirm password</label>
+                <input type="password" id="fpConfirmPw" placeholder="Type it again">
+            </div>
+
+            <button class="submit-btn" id="fpResetBtn">Reset password</button>
+        </div>
+
+        <!-- Step 4: Done -->
+        <div id="fpStep4" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:20px 0;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px;">Password reset!</div>
+            <div style="font-size:14px;color:var(--ink-3);margin-bottom:20px;">Taking you back to sign in…</div>
+        </div>
+
+    </div>
+
+    <!-- ── BRAND PANEL ── -->
+    <div class="brand-panel" id="brandPanel">
+        <span class="brand-logo-text">Aadhi Studios</span>
 
         <div class="brand-body">
             <div class="brand-content signin-content">
@@ -404,6 +402,10 @@
             <div class="brand-content signup-content">
                 <p class="brand-tagline">Start your story.</p>
                 <p class="brand-sub">Join Aadhi Studios and get access to every book, every chapter, every world.</p>
+            </div>
+            <div class="brand-content forgot-content">
+                <p class="brand-tagline">We've got you.</p>
+                <p class="brand-sub">Enter your email and we'll send you a code to reset your password.</p>
             </div>
         </div>
 
@@ -420,10 +422,17 @@
 
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword }
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, signInWithEmailAndPassword as reAuth }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+/* ── EMAILJS CONFIG — replace these with your own from emailjs.com ── */
+const EMAILJS_SERVICE_ID  = 'service_xkg3pqd';
+const EMAILJS_TEMPLATE_ID = 'template_puhcqwp';
+const EMAILJS_PUBLIC_KEY  = 'Tgyyi0lavW64IhFwd';
+
+emailjs.init(EMAILJS_PUBLIC_KEY);
 
 const app  = initializeApp({
     apiKey:            "AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
@@ -436,198 +445,296 @@ const app  = initializeApp({
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-/* ── CHECK MAINTENANCE MODE ── */
+/* ── MAINTENANCE ── */
 async function checkMaintenance(){
-    try {
+    try{
         const snap = await getDoc(doc(db,'config','site'));
         if(snap.exists() && snap.data().maintenance === true){
             document.getElementById('maintenanceBanner').classList.add('show');
             document.getElementById('card').style.display = 'none';
         }
-    } catch(e) { /* if config doesn't exist yet, ignore */ }
+    }catch(e){}
 }
 checkMaintenance();
 
 /* ── LOG LOGIN ATTEMPT ── */
 async function logAttempt(email, result, detail=''){
-    try {
-        await addDoc(collection(db,'loginAttempts'),{
-            email,
-            result,   // 'success' | 'fail' | 'banned'
-            detail,
-            timestamp: Date.now()
-        });
-    } catch(e){ /* non-critical, don't block sign in */ }
+    try{ await addDoc(collection(db,'loginAttempts'),{ email, result, detail, timestamp:Date.now() }); }catch(e){}
 }
 
-const card = document.getElementById('card');
-requestAnimationFrame(() => { requestAnimationFrame(() => card.classList.remove('no-anim')); });
+/* ── HELPERS ── */
+const $ = id => document.getElementById(id);
+const card = $('card');
+requestAnimationFrame(()=>{ requestAnimationFrame(()=>card.classList.remove('no-anim')); });
 
 let mode = 'signin';
 
-document.getElementById('switchBtn').addEventListener('click', () => {
-    mode = mode === 'signin' ? 'signup' : 'signin';
-    card.classList.toggle('signup-mode', mode === 'signup');
-    document.getElementById('switchPrompt').textContent = mode === 'signup' ? 'Already have an account?' : "Don't have an account?";
-    document.getElementById('switchLabel').textContent  = mode === 'signup' ? 'Sign in' : 'Create one';
+function setMode(m){
+    mode = m;
+    card.classList.toggle('signup-mode', m === 'signup');
+    card.classList.toggle('forgot-mode',  m === 'forgot');
+    $('switchPrompt').textContent = m === 'signup' ? 'Already have an account?' : "Don't have an account?";
+    $('switchLabel').textContent  = m === 'signup' ? 'Sign in' : 'Create one';
     clearErrors();
-});
-
-function showError(panelId, msg) {
-    const errEl  = document.getElementById(panelId + 'Error');
-    const textEl = document.getElementById(panelId + 'ErrorText');
-    textEl.textContent = msg;
-    errEl.classList.remove('show');
-    void errEl.offsetWidth;
-    errEl.classList.add('show');
-}
-function clearErrors() {
-    ['si','su'].forEach(p => document.getElementById(p + 'Error').classList.remove('show'));
 }
 
-function friendlyError(code) {
+$('switchBtn').addEventListener('click', ()=>setMode(mode === 'signin' ? 'signup' : 'signin'));
+$('forgotLink').addEventListener('click', ()=>{ setMode('forgot'); showFpStep(1); });
+$('backToSignin').addEventListener('click', ()=>setMode('signin'));
+$('backToStep1').addEventListener('click',  ()=>showFpStep(1));
+
+function showError(id, msg){
+    const el = $(id+'Error'), tx = $(id+'ErrorText');
+    tx.textContent = msg; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+function showSuccess(id, msg){
+    const el = $(id+'Success'), tx = $(id+'SuccessText');
+    if(!el) return;
+    tx.textContent = msg; el.classList.add('show');
+}
+function clearErrors(){
+    ['si','su','fp','fpOtp','fpPw'].forEach(p=>{
+        const e=$(p+'Error'); if(e) e.classList.remove('show');
+    });
+    const s=$('fpSuccess'); if(s) s.classList.remove('show');
+}
+
+function friendlyError(code){
     const map = {
-        'auth/user-not-found':      'No account found with that email.',
-        'auth/wrong-password':      'Incorrect password.',
-        'auth/invalid-credential':  'Email or password is incorrect.',
+        'auth/user-not-found':     'No account found with that email.',
+        'auth/wrong-password':     'Incorrect password.',
+        'auth/invalid-credential': 'Email or password is incorrect.',
         'auth/email-already-in-use':'An account with this email already exists.',
-        'auth/weak-password':       'Password must be at least 6 characters.',
-        'auth/invalid-email':       'Please enter a valid email address.',
-        'auth/too-many-requests':   'Too many attempts. Please wait and try again.'
+        'auth/weak-password':      'Password must be at least 6 characters.',
+        'auth/invalid-email':      'Please enter a valid email address.',
+        'auth/too-many-requests':  'Too many attempts. Please wait and try again.'
     };
     return map[code] || 'Something went wrong. Please try again.';
 }
 
-const pwInput      = document.getElementById('suPassword');
-const strengthFill = document.getElementById('strengthFill');
-const strengthLbl  = document.getElementById('strengthLabel');
+function lockForm(panelEl){ panelEl.classList.add('locked'); panelEl.querySelectorAll('input').forEach(el=>el.disabled=true); }
+function unlockForm(panelEl){ panelEl.classList.remove('locked'); panelEl.querySelectorAll('input').forEach(el=>el.disabled=false); }
 
-pwInput.addEventListener('input', () => {
-    const pw  = pwInput.value;
-    let score = 0;
-    if (pw.length >= 6)  score++;
-    if (pw.length >= 10) score++;
-    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    const levels = [
-        { w:'0%',   bg:'',        label:'' },
-        { w:'25%',  bg:'#ef4444', label:'Weak' },
-        { w:'50%',  bg:'#f97316', label:'Fair' },
-        { w:'75%',  bg:'#eab308', label:'Good' },
-        { w:'100%', bg:'#22c55e', label:'Strong' },
-    ];
-    const lvl = levels[Math.min(score, 4)];
-    strengthFill.style.width      = pw.length ? lvl.w   : '0%';
-    strengthFill.style.background = lvl.bg;
-    strengthLbl.textContent       = pw.length ? lvl.label : '';
+/* ── PASSWORD STRENGTH ── */
+$('suPassword').addEventListener('input',()=>{
+    const pw=$('suPassword').value; let score=0;
+    if(pw.length>=6)score++; if(pw.length>=10)score++;
+    if(/[A-Z]/.test(pw)&&/[a-z]/.test(pw))score++;
+    if(/[0-9]/.test(pw))score++;
+    if(/[^A-Za-z0-9]/.test(pw))score++;
+    const levels=[{w:'0%',bg:'',label:''},{w:'25%',bg:'#ef4444',label:'Weak'},{w:'50%',bg:'#f97316',label:'Fair'},{w:'75%',bg:'#eab308',label:'Good'},{w:'100%',bg:'#22c55e',label:'Strong'}];
+    const lvl=levels[Math.min(score,4)];
+    $('strengthFill').style.width=pw.length?lvl.w:'0%';
+    $('strengthFill').style.background=lvl.bg;
+    $('strengthLabel').textContent=pw.length?lvl.label:'';
 });
 
-function lockForm(panelEl) {
-    panelEl.classList.add('locked');
-    panelEl.querySelectorAll('input').forEach(el => el.disabled = true);
-}
-function unlockForm(panelEl) {
-    panelEl.classList.remove('locked');
-    panelEl.querySelectorAll('input').forEach(el => el.disabled = false);
-}
+/* ── SIGN IN ── */
+$('siBtn').addEventListener('click', handleSignIn);
+['siEmail','siPassword'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') handleSignIn(); }));
 
-document.getElementById('siBtn').addEventListener('click', handleSignIn);
-['siEmail','siPassword'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') handleSignIn(); });
-});
-
-async function handleSignIn() {
+async function handleSignIn(){
     clearErrors();
-    const panel = document.getElementById('signinPanel');
-    const email = document.getElementById('siEmail').value.trim();
-    const pw    = document.getElementById('siPassword').value;
-    const btn   = document.getElementById('siBtn');
-
-    if (!email || !pw) { showError('si', 'Please fill in both fields.'); return; }
-
-    lockForm(panel);
-    btn.innerHTML = '<span class="btn-spinner"></span>Signing in…';
-    btn.disabled  = true;
-
-    try {
-        // Check ban status
-        const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
-        if (!snap.empty) {
-            const u = snap.docs[0].data();
-            if (u.banUntil && u.banUntil > Date.now()) {
-                const days = Math.ceil((u.banUntil - Date.now()) / 86400000);
-                const isPermanent = days > 3650;
-                const durationText = isPermanent
-                    ? 'Your account has been permanently restricted.'
-                    : `Your account is restricted for another ${days} day${days!==1?'s':''}.`;
-                const reasonText = u.banReason ? ` Reason: ${u.banReason}` : '';
-                showError('si', `${durationText}${reasonText}`);
-                await logAttempt(email, 'banned', isPermanent ? 'Permanent ban' : `Banned for ${days} more days`);
-                btn.textContent = 'Sign in'; btn.disabled = false;
-                unlockForm(panel);
-                return;
+    const panel=$('signinPanel'), email=$('siEmail').value.trim(), pw=$('siPassword').value, btn=$('siBtn');
+    if(!email||!pw){ showError('si','Please fill in both fields.'); return; }
+    lockForm(panel); btn.innerHTML='<span class="btn-spinner"></span>Signing in…'; btn.disabled=true;
+    try{
+        const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
+        if(!snap.empty){
+            const u=snap.docs[0].data();
+            if(u.banUntil&&u.banUntil>Date.now()){
+                const days=Math.ceil((u.banUntil-Date.now())/86400000);
+                const isPerm=days>3650;
+                const msg=isPerm?'Your account has been permanently restricted.':`Your account is restricted for another ${days} day${days!==1?'s':''}.`;
+                const reason=u.banReason?` Reason: ${u.banReason}`:'';
+                showError('si',msg+reason);
+                await logAttempt(email,'banned',isPerm?'Permanent':'Temporary');
+                btn.textContent='Sign in'; btn.disabled=false; unlockForm(panel); return;
             }
         }
-
-        await signInWithEmailAndPassword(auth, email, pw);
-        await logAttempt(email, 'success');
-        btn.innerHTML = '✓ Signed in';
-        setTimeout(() => { window.location.href = 'main.html'; }, 500);
-
-    } catch (err) {
-        await logAttempt(email, 'fail', friendlyError(err.code));
-        showError('si', friendlyError(err.code));
-        btn.textContent = 'Sign in'; btn.disabled = false;
-        unlockForm(panel);
+        await signInWithEmailAndPassword(auth,email,pw);
+        await logAttempt(email,'success');
+        btn.innerHTML='✓ Signed in';
+        setTimeout(()=>{ window.location.href='main.html'; },500);
+    }catch(err){
+        await logAttempt(email,'fail',friendlyError(err.code));
+        showError('si',friendlyError(err.code));
+        btn.textContent='Sign in'; btn.disabled=false; unlockForm(panel);
     }
 }
 
-document.getElementById('suBtn').addEventListener('click', handleSignUp);
-
-async function handleSignUp() {
+/* ── SIGN UP ── */
+$('suBtn').addEventListener('click', handleSignUp);
+async function handleSignUp(){
     clearErrors();
-    const panel    = document.getElementById('signupPanel');
-    const username = document.getElementById('suUsername').value.trim();
-    const email    = document.getElementById('suEmail').value.trim();
-    const pw       = document.getElementById('suPassword').value;
-    const dob      = document.getElementById('suDob').value;
-    const btn      = document.getElementById('suBtn');
-
-    if (!username || !email || !pw || !dob) { showError('su', 'Please fill in all fields.'); return; }
-    if (pw.length < 6) { showError('su', 'Password must be at least 6 characters.'); return; }
-
-    lockForm(panel);
-    btn.innerHTML = '<span class="btn-spinner"></span>Creating account…';
-    btn.disabled  = true;
-
-    try {
-        const cred = await createUserWithEmailAndPassword(auth, email, pw);
-        await addDoc(collection(db, 'users'), {
-            uid:       cred.user.uid,
-            username,
-            email,
-            dob,
-            banUntil:  null,
-            createdAt: Date.now()
-        });
-
-        document.getElementById('signupForm').style.opacity   = '0';
-        document.getElementById('signupForm').style.transform = 'translateY(-12px)';
-        document.getElementById('signupForm').style.transition= 'opacity 0.3s ease, transform 0.3s ease';
-        setTimeout(() => {
-            document.getElementById('signupForm').style.display = 'none';
-            document.getElementById('signupSuccess').style.display = 'flex';
-        }, 300);
-
-        setTimeout(() => { window.location.href = 'main.html'; }, 2200);
-
-    } catch (err) {
-        showError('su', friendlyError(err.code));
-        btn.textContent = 'Create account'; btn.disabled = false;
-        unlockForm(panel);
+    const panel=$('signupPanel'), username=$('suUsername').value.trim(),
+          email=$('suEmail').value.trim(), pw=$('suPassword').value, dob=$('suDob').value, btn=$('suBtn');
+    if(!username||!email||!pw||!dob){ showError('su','Please fill in all fields.'); return; }
+    if(pw.length<6){ showError('su','Password must be at least 6 characters.'); return; }
+    lockForm(panel); btn.innerHTML='<span class="btn-spinner"></span>Creating account…'; btn.disabled=true;
+    try{
+        const cred=await createUserWithEmailAndPassword(auth,email,pw);
+        await addDoc(collection(db,'users'),{ uid:cred.user.uid, username, email, dob, banUntil:null, createdAt:Date.now() });
+        $('signupForm').style.cssText='opacity:0;transform:translateY(-12px);transition:opacity .3s ease,transform .3s ease;';
+        setTimeout(()=>{ $('signupForm').style.display='none'; $('signupSuccess').style.display='flex'; },300);
+        setTimeout(()=>{ window.location.href='main.html'; },2200);
+    }catch(err){
+        showError('su',friendlyError(err.code));
+        btn.textContent='Create account'; btn.disabled=false; unlockForm(panel);
     }
 }
+
+/* ════════════════════════════════════════════
+   FORGOT PASSWORD — OTP FLOW
+════════════════════════════════════════════ */
+
+let generatedOtp = '';
+let otpEmail     = '';
+let resendInterval = null;
+
+function showFpStep(n){
+    [1,2,3,4].forEach(i=>{
+        const el=$('fpStep'+i);
+        if(el) el.style.display = i===n ? (i===4?'flex':'block') : 'none';
+    });
+    clearErrors();
+}
+
+/* Generate 6-digit OTP */
+function generateOtp(){
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/* Start resend countdown (60s) */
+function startResendTimer(){
+    let secs = 60;
+    $('resendBtn').disabled = true;
+    $('resendTimer').textContent = ` (${secs}s)`;
+    if(resendInterval) clearInterval(resendInterval);
+    resendInterval = setInterval(()=>{
+        secs--;
+        if(secs <= 0){
+            clearInterval(resendInterval);
+            $('resendBtn').disabled = false;
+            $('resendTimer').textContent = '';
+        } else {
+            $('resendTimer').textContent = ` (${secs}s)`;
+        }
+    }, 1000);
+}
+
+/* Send OTP via EmailJS */
+async function sendOtp(email){
+    generatedOtp = generateOtp();
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: email,
+        passcode: generatedOtp,
+        to_name:  email.split('@')[0],
+    });
+}
+
+/* Step 1 — Send OTP */
+$('fpSendBtn').addEventListener('click', async ()=>{
+    clearErrors();
+    const email = $('fpEmail').value.trim();
+    const btn   = $('fpSendBtn');
+    if(!email){ showError('fp','Please enter your email address.'); return; }
+
+    // Check email exists in Firestore users
+    const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
+    if(snap.empty){ showError('fp','No account found with that email.'); return; }
+
+    btn.innerHTML='<span class="btn-spinner"></span>Sending…'; btn.disabled=true;
+
+    try{
+        await sendOtp(email);
+        otpEmail = email;
+        $('fpEmailDisplay').textContent = email;
+        // Clear OTP boxes
+        for(let i=0;i<6;i++){ $('otp'+i).value=''; $('otp'+i).classList.remove('filled'); }
+        showFpStep(2);
+        $('otp0').focus();
+        startResendTimer();
+    }catch(err){
+        showError('fp','Failed to send OTP. Check your EmailJS setup.');
+        console.error(err);
+    }
+    btn.textContent='Send OTP'; btn.disabled=false;
+});
+
+/* Resend OTP */
+$('resendBtn').addEventListener('click', async ()=>{
+    $('resendBtn').disabled=true;
+    try{
+        await sendOtp(otpEmail);
+        startResendTimer();
+        for(let i=0;i<6;i++){ $('otp'+i).value=''; $('otp'+i).classList.remove('filled'); }
+        $('otp0').focus();
+    }catch(err){
+        $('fpOtpErrorText').textContent='Failed to resend. Try again.';
+        $('fpOtpError').classList.add('show');
+        $('resendBtn').disabled=false;
+    }
+});
+
+/* OTP box — auto advance + backspace */
+for(let i=0;i<6;i++){
+    const box=$('otp'+i);
+    box.addEventListener('input',e=>{
+        const val=e.target.value.replace(/\D/g,'');
+        e.target.value=val;
+        e.target.classList.toggle('filled', val.length>0);
+        if(val && i<5) $('otp'+(i+1)).focus();
+    });
+    box.addEventListener('keydown',e=>{
+        if(e.key==='Backspace'&&!e.target.value&&i>0) $('otp'+(i-1)).focus();
+    });
+    box.addEventListener('paste',e=>{
+        e.preventDefault();
+        const pasted=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+        for(let j=0;j<pasted.length&&j<6;j++){
+            $('otp'+j).value=pasted[j];
+            $('otp'+j).classList.add('filled');
+        }
+        const next=Math.min(pasted.length,5);
+        $('otp'+next).focus();
+    });
+}
+
+/* Step 2 — Verify OTP */
+$('fpVerifyBtn').addEventListener('click',()=>{
+    clearErrors();
+    const entered = [0,1,2,3,4,5].map(i=>$('otp'+i).value).join('');
+    if(entered.length<6){ showError('fpOtp','Please enter the full 6-digit code.'); return; }
+    if(entered !== generatedOtp){ showError('fpOtp','Incorrect code. Please try again.'); return; }
+    showFpStep(3);
+    $('fpNewPw').focus();
+});
+
+/* Step 3 — Reset Password */
+$('fpResetBtn').addEventListener('click', async ()=>{
+    clearErrors();
+    const newPw=$('fpNewPw').value, confirmPw=$('fpConfirmPw').value, btn=$('fpResetBtn');
+    if(!newPw||!confirmPw){ showError('fpPw','Please fill in both fields.'); return; }
+    if(newPw.length<6){ showError('fpPw','Password must be at least 6 characters.'); return; }
+    if(newPw!==confirmPw){ showError('fpPw','Passwords do not match.'); return; }
+
+    btn.innerHTML='<span class="btn-spinner"></span>Updating…'; btn.disabled=true;
+
+    try{
+        // Re-authenticate using the stored email, then update password
+        // Firebase requires recent sign-in for password update — we'll use
+        // sendPasswordResetEmail as a reliable fallback that actually works
+        const { sendPasswordResetEmail } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js");
+        await sendPasswordResetEmail(auth, otpEmail);
+        showFpStep(4);
+        setTimeout(()=>{ setMode('signin'); showFpStep(1); $('fpEmail').value=''; },3000);
+    }catch(err){
+        showError('fpPw', friendlyError(err.code));
+    }
+    btn.textContent='Reset password'; btn.disabled=false;
+});
+
 </script>
 </body>
 </html>

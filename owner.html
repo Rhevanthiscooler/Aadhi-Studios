@@ -211,8 +211,7 @@
         <button class="nav-icon-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
         <div class="nav-dropdown" id="settingsDropdown">
             <button id="themeBtn"><i class="fas fa-moon"></i> Toggle theme</button>
-            <div class="nav-divider"></div>
-            <button class="danger" onclick="window.location.href='main.html'"><i class="fas fa-arrow-left"></i> Back to app</button>
+
         </div>
     </div>
 </nav>
@@ -403,13 +402,12 @@
 <!-- ── TOAST ── -->
 <div id="toast"></div>
 
-<!-- BACK FOOTER -->
-<div class="back-footer">
-    <button onclick="window.location.href='main.html'"><i class="fas fa-arrow-left"></i> Back to Aadhi Studios</button>
-</div>
+
 
 <script type="module">
 import { initializeApp }  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, getDocs, query, orderBy, limit, where }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
@@ -421,7 +419,16 @@ const app = initializeApp({
     messagingSenderId: "1052163368305",
     appId:             "1:1052163368305:web:c8c51c39c271659caa42d0"
 });
-const db = getFirestore(app);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+/* ── OWNER GUARD — redirect anyone who isn't rhevanth@gmail.com ── */
+const OWNER_EMAIL = 'rhevanth@gmail.com';
+onAuthStateChanged(auth, user => {
+    if (!user || user.email !== OWNER_EMAIL) {
+        window.location.href = 'main.html';
+    }
+});
 
 /* ── HELPERS ── */
 const $ = id => document.getElementById(id);

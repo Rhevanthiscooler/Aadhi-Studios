@@ -388,35 +388,13 @@
             <button class="forgot-link" id="backToStep1" style="color:var(--ink-3);margin-top:8px;display:block;text-align:center;">← Use different email</button>
         </div>
 
-        <!-- Step 3: New password -->
-        <div id="fpStep3" style="display:none;">
-            <div class="eyebrow">New password</div>
-            <h1 class="form-heading" style="font-size:26px;">Set new password</h1>
-
-            <div class="error-msg" id="fpPwError">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span id="fpPwErrorText"></span>
-            </div>
-
-            <div class="field">
-                <label>New password</label>
-                <input type="password" id="fpNewPw" placeholder="At least 6 characters">
-            </div>
-            <div class="field">
-                <label>Confirm password</label>
-                <input type="password" id="fpConfirmPw" placeholder="Type it again">
-            </div>
-
-            <button class="submit-btn" id="fpResetBtn">Reset password</button>
-        </div>
-
         <!-- Step 4: Done -->
         <div id="fpStep4" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:20px 0;">
             <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div style="font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px;">Password reset!</div>
-            <div style="font-size:14px;color:var(--ink-3);margin-bottom:20px;">Taking you back to sign in…</div>
+            <div style="font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px;">Check your email!</div>
+            <div style="font-size:14px;color:var(--ink-3);margin-bottom:20px;line-height:1.6;">We've sent a <strong>password reset link</strong> to your email. Click it to set your new password, then come back and sign in.</div>
         </div>
 
     </div>
@@ -704,7 +682,7 @@ let otpEmail     = '';
 let resendInterval = null;
 
 function showFpStep(n){
-    [1,2,3,4].forEach(i=>{
+    [1,2,4].forEach(i=>{
         const el=$('fpStep'+i);
         if(el) el.style.display = i===n ? (i===4?'flex':'block') : 'none';
     });
@@ -813,38 +791,27 @@ for(let i=0;i<6;i++){
 }
 
 /* Step 2 — Verify OTP */
-$('fpVerifyBtn').addEventListener('click',()=>{
+$('fpVerifyBtn').addEventListener('click', async ()=>{
     clearErrors();
     const entered = [0,1,2,3,4,5].map(i=>$('otp'+i).value).join('');
     if(entered.length<6){ showError('fpOtp','Please enter the full 6-digit code.'); return; }
     if(entered !== generatedOtp){ showError('fpOtp','Incorrect code. Please try again.'); return; }
-    showFpStep(3);
-    $('fpNewPw').focus();
-});
 
-/* Step 3 — Reset Password */
-$('fpResetBtn').addEventListener('click', async ()=>{
-    clearErrors();
-    const newPw=$('fpNewPw').value, confirmPw=$('fpConfirmPw').value, btn=$('fpResetBtn');
-    if(!newPw||!confirmPw){ showError('fpPw','Please fill in both fields.'); return; }
-    if(newPw.length<6){ showError('fpPw','Password must be at least 6 characters.'); return; }
-    if(newPw!==confirmPw){ showError('fpPw','Passwords do not match.'); return; }
-
-    btn.innerHTML='<span class="btn-spinner"></span>Updating…'; btn.disabled=true;
-
+    // OTP verified — now send Firebase's real password reset email
+    const btn = $('fpVerifyBtn');
+    btn.innerHTML='<span class="btn-spinner"></span>Verified! Sending reset link…'; btn.disabled=true;
     try{
-        // Re-authenticate using the stored email, then update password
-        // Firebase requires recent sign-in for password update — we'll use
-        // sendPasswordResetEmail as a reliable fallback that actually works
         const { sendPasswordResetEmail } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js");
         await sendPasswordResetEmail(auth, otpEmail);
         showFpStep(4);
-        setTimeout(()=>{ setMode('signin'); showFpStep(1); $('fpEmail').value=''; },3000);
-    }catch(err){
-        showError('fpPw', friendlyError(err.code));
+    } catch(err){
+        $('fpOtpErrorText').textContent = 'Could not send reset link. Try again.';
+        $('fpOtpError').classList.remove('show'); void $('fpOtpError').offsetWidth; $('fpOtpError').classList.add('show');
     }
-    btn.textContent='Reset password'; btn.disabled=false;
+    btn.textContent='Verify code'; btn.disabled=false;
 });
+
+
 
 </script>
 </body>

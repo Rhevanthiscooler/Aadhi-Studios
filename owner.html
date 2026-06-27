@@ -628,12 +628,10 @@ function renderMostViewed(){
 /* ── USERS TABLE ── */
 function renderUsersTable(){
     const tbody = $('usersTableBody');
-    $('usersCount').textContent = users.length + ' accounts';
-    if(users.length === 0){
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No registered users yet.</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = users.map((user,i)=>{
+    const visibleUsers = users.filter(u => !u.deleted);
+    $('usersCount').textContent = visibleUsers.length + ' accounts';
+    if(visibleUsers.length === 0){ tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No registered users yet.</td></tr>`; return; }
+    tbody.innerHTML = visibleUsers.map((user,i)=>{
         const deleted = user.deleted;
         const banned  = !deleted && user.banUntil && user.banUntil > Date.now();
         let badge;

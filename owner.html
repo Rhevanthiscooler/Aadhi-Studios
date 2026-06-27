@@ -634,9 +634,12 @@ function renderUsersTable(){
         return;
     }
     tbody.innerHTML = users.map((user,i)=>{
-        const banned = user.banUntil && user.banUntil > Date.now();
+        const deleted = user.deleted;
+        const banned  = !deleted && user.banUntil && user.banUntil > Date.now();
         let badge;
-        if(banned){
+        if(deleted){
+            badge = `<span class="status-badge banned" style="background:#fee2e2;color:#d93025;"><i class="fas fa-trash"></i> Deleted</span>`;
+        } else if(banned){
             const daysLeft = Math.ceil((user.banUntil - Date.now()) / 86400000);
             const isPerm   = daysLeft > 3650;
             const until    = isPerm ? 'Permanent' : `until ${new Date(user.banUntil).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
@@ -645,15 +648,16 @@ function renderUsersTable(){
         } else {
             badge = `<span class="status-badge active"><i class="fas fa-circle"></i> Active</span>`;
         }
-        const banBtn = banned
+        const banBtn = deleted ? '' : banned
             ? `<button class="action-btn unban" onclick="window._unbanUser('${user.id}')">Unban</button>`
             : `<button class="action-btn ban"   onclick="window._banUser('${user.id}')">Ban</button>`;
-        return `<tr style="animation-delay:${(i*0.03).toFixed(2)}s">
+        const deleteBtn = deleted ? '' : `<button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button>`;
+        return `<tr style="animation-delay:${(i*0.03).toFixed(2)}s;${deleted?'opacity:.5;':''}">
             <td><strong>${escapeHtml(user.username||'Anonymous')}</strong></td>
             <td>${escapeHtml(user.email||'—')}</td>
             <td>${user.dob||'—'}</td>
             <td>${badge}</td>
-            <td>${banBtn}<button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button></td>
+            <td>${banBtn}${deleteBtn}</td>
         </tr>`;
     }).join('');
 }
@@ -754,8 +758,18 @@ window._unbanUser = async function(userId){
 window._deleteUser = async function(userId){
     const user = users.find(u=>u.id===userId);
     if(!user) return;
-    if(!confirm(`Permanently delete "${user.username||'this user'}"? This cannot be undone.`)) return;
-    toast('Delete requires the Firebase Admin SDK — see your Cloud Functions.');
+    if(!confirm(`Permanently delete "${user.username||'this user'}"? They will never be able to sign in again. This cannot be undone.`)) return;
+    try{
+        await updateDoc(doc(db,'users',userId),{
+            deleted: true,
+            deletedAt: Date.now(),
+            banUntil: Date.now() + 36500*86400000, // also ban permanently as backup
+            banReason: 'Your account has been deleted.'
+        });
+        toast('Account deleted — user can no longer sign in.');
+    }catch(err){
+        toast('Could not delete: '+(err?.message||'unknown error'));
+    }
 };
 
 /* ── LOG LOGIN ATTEMPT (called from index.html via Firestore) ──

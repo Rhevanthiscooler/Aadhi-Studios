@@ -738,7 +738,7 @@ function startResendTimer(){
 async function sendOtp(email){
     generatedOtp = generateOtp();
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        to_email: email,
+        email:    email,
         passcode: generatedOtp,
         to_name:  email.split('@')[0],
     });

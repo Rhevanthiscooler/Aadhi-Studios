@@ -71,14 +71,16 @@
         transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
         will-change: transform, opacity; overflow-y: auto;
     }
-    #signinPanel  { left:0; transform:translateX(0);    opacity:1; z-index:2; }
-    #signupPanel  { left:0; transform:translateX(100%); opacity:0; z-index:1; pointer-events:none; }
-    #forgotPanel  { left:0; transform:translateX(100%); opacity:0; z-index:1; pointer-events:none; }
+    #signinPanel  { left:0;              transform:translateX(0);    opacity:1; z-index:2; }
+    #signupPanel  { left:0;              transform:translateX(100%); opacity:0; z-index:1; pointer-events:none; }
+    #forgotPanel  { left:0;              transform:translateX(100%); opacity:0; z-index:1; pointer-events:none; }
 
+    /* In signup/forgot mode the brand panel moves to the LEFT,
+       so the form panel must sit on the RIGHT (offset by panel-w) */
     .card.signup-mode #signinPanel  { transform:translateX(-60px); opacity:0; pointer-events:none; z-index:1; }
-    .card.signup-mode #signupPanel  { transform:translateX(0);      opacity:1; pointer-events:all;  z-index:2; }
+    .card.signup-mode #signupPanel  { left:var(--panel-w); transform:translateX(0); opacity:1; pointer-events:all; z-index:2; }
     .card.forgot-mode #signinPanel  { transform:translateX(-60px); opacity:0; pointer-events:none; z-index:1; }
-    .card.forgot-mode #forgotPanel  { transform:translateX(0);      opacity:1; pointer-events:all;  z-index:2; }
+    .card.forgot-mode #forgotPanel  { left:var(--panel-w); transform:translateX(0); opacity:1; pointer-events:all; z-index:2; }
 
     .form-panel .field, .form-panel .submit-btn,
     .form-panel .eyebrow, .form-panel .form-heading { animation: fieldRise 0.55s var(--ease) backwards; }

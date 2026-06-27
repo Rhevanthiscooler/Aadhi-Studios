@@ -351,8 +351,8 @@
             </div>
 
             <div class="field">
-                <label>Your username</label>
-                <input type="text" id="fpUsername" placeholder="Enter your username" autocomplete="username">
+                <label>Your email address</label>
+                <input type="email" id="fpEmail" placeholder="you@example.com" autocomplete="email">
             </div>
 
             <button class="submit-btn" id="fpSendBtn">Send OTP</button>
@@ -747,16 +747,13 @@ async function sendOtp(email){
 /* Step 1 — Send OTP */
 $('fpSendBtn').addEventListener('click', async ()=>{
     clearErrors();
-    const username = $('fpUsername').value.trim();
-    const btn      = $('fpSendBtn');
-    if(!username){ showError('fp','Please enter your username.'); return; }
+    const email = $('fpEmail').value.trim();
+    const btn   = $('fpSendBtn');
+    if(!email){ showError('fp','Please enter your email address.'); return; }
 
-    // Look up email from username in Firestore
-    const snap = await getDocs(query(collection(db,'users'), where('username','==',username)));
-    if(snap.empty){ showError('fp','No account found with that username.'); return; }
-
-    const email = snap.docs[0].data().email;
-    if(!email){ showError('fp','No email linked to this account.'); return; }
+    // Check email exists in Firestore users
+    const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
+    if(snap.empty){ showError('fp','No account found with that email.'); return; }
 
     btn.innerHTML='<span class="btn-spinner"></span>Sending…'; btn.disabled=true;
 

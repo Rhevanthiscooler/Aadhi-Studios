@@ -599,9 +599,18 @@ async function handleUsernameStep(){
 
         // Check if account was deleted by owner
         if(userData.deleted){
-            errTx.textContent = 'This account has been deleted.';
-            errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
-            await logAttempt(userData.email||username, 'fail', 'Account deleted');
+            const deletedAt = userData.deletedAt || 0;
+            const daysSinceDeleted = (Date.now() - deletedAt) / 86400000;
+            if(daysSinceDeleted < 30){
+                // Within 30 days — show deleted message
+                errTx.textContent = 'This account has been deleted.';
+                errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+                await logAttempt(userData.email||username, 'fail', 'Account deleted');
+            } else {
+                // After 30 days — act as if account doesn't exist
+                errTx.textContent = 'No account found with that username.';
+                errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+            }
             btn.textContent='Continue'; btn.disabled=false; return;
         }
 

@@ -659,7 +659,17 @@ async function handleSignIn(){
 
     btn.innerHTML='<span class="btn-spinner"></span>Signing in…'; btn.disabled=true;
     try{
-        await signInWithEmailAndPassword(auth, resolvedEmail, pw);
+        const userCred = await signInWithEmailAndPassword(auth, resolvedEmail, pw);
+        // Check email verification
+        if(!userCred.user.emailVerified){
+            // Sign them back out
+            const { signOut: siSignOut } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js");
+            await siSignOut(auth);
+            errTx.textContent = 'Please verify your email first. Check your inbox for the verification link.';
+            errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+            await logAttempt(resolvedEmail,'fail','Email not verified');
+            btn.textContent='Sign in'; btn.disabled=false; return;
+        }
         await logAttempt(resolvedEmail,'success');
         btn.innerHTML='✓ Signed in';
         setTimeout(()=>{ window.location.href='main.html'; },500);
@@ -684,10 +694,22 @@ async function handleSignUp(){
     lockForm(panel); btn.innerHTML='<span class="btn-spinner"></span>Creating account…'; btn.disabled=true;
     try{
         const cred=await createUserWithEmailAndPassword(auth,email,pw);
-        await addDoc(collection(db,'users'),{ uid:cred.user.uid, username, email, dob, banUntil:null, createdAt:Date.now() });
+        // Send verification email before saving to Firestore
+        const { sendEmailVerification } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js");
+        await sendEmailVerification(cred.user);
+        await addDoc(collection(db,'users'),{ uid:cred.user.uid, username, email, dob, banUntil:null, createdAt:Date.now(), emailVerified:false });
         $('signupForm').style.cssText='opacity:0;transform:translateY(-12px);transition:opacity .3s ease,transform .3s ease;';
-        setTimeout(()=>{ $('signupForm').style.display='none'; $('signupSuccess').style.display='flex'; },300);
-        setTimeout(()=>{ window.location.href='main.html'; },2200);
+        setTimeout(()=>{
+            $('signupForm').style.display='none';
+            $('signupSuccess').style.display='flex';
+            // Update success message to mention verification
+            $('signupSuccess').querySelector('div:nth-child(2)').textContent='Account created!';
+            $('signupSuccess').querySelector('div:nth-child(3)').textContent='Check your email and click the verification link before signing in.';
+        },300);
+        // Don't auto-redirect — user needs to verify email first
+        // Sign out so they can't bypass verification
+        const { signOut: suSignOut } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js");
+        await suSignOut(auth);
     }catch(err){
         showError('su',friendlyError(err.code));
         btn.textContent='Create account'; btn.disabled=false; unlockForm(panel);

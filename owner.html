@@ -423,9 +423,9 @@ const db   = getFirestore(app);
 const auth = getAuth(app);
 
 /* ── OWNER GUARD — redirect anyone who isn't rhevanth@gmail.com ── */
-const OWNER_EMAIL = 'rhevanth@gmail.com';
+const OWNER_EMAILS = ['rhevanth@gmail.com', 'indradamo@gmail.com'];
 onAuthStateChanged(auth, user => {
-    if (!user || user.email !== OWNER_EMAIL) {
+    if (!user || !OWNER_EMAILS.includes(user.email)) {
         window.location.href = 'main.html';
     }
 });

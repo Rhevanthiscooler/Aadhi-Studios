@@ -222,6 +222,15 @@
         .field-row { grid-template-columns:1fr; }
         .otp-box { width:42px; height:50px; font-size:20px; }
     }
+    /* ── SIGN IN STEP TRANSITIONS ── */
+    @keyframes slideInRight  { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes slideOutLeft  { from{opacity:1;transform:translateX(0)}    to{opacity:0;transform:translateX(-40px)} }
+    @keyframes slideInLeft   { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes slideOutRight { from{opacity:1;transform:translateX(0)}    to{opacity:0;transform:translateX(40px)} }
+    .si-slide-in-right  { animation: slideInRight  0.35s cubic-bezier(.16,1,.3,1) forwards; }
+    .si-slide-out-left  { animation: slideOutLeft  0.28s cubic-bezier(.4,0,1,1)   forwards; }
+    .si-slide-in-left   { animation: slideInLeft   0.35s cubic-bezier(.16,1,.3,1) forwards; }
+    .si-slide-out-right { animation: slideOutRight 0.28s cubic-bezier(.4,0,1,1)   forwards; }
     </style>
 </head>
 <body>
@@ -236,25 +245,47 @@
 
     <!-- ── SIGN IN PANEL ── -->
     <div class="form-panel" id="signinPanel">
-        <div class="eyebrow">Welcome back</div>
-        <h1 class="form-heading">Sign in</h1>
 
-        <div class="error-msg" id="siError">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span id="siErrorText"></span>
+        <!-- Step 1: Username -->
+        <div id="siStep1">
+            <div class="eyebrow">Welcome back</div>
+            <h1 class="form-heading">Sign in</h1>
+
+            <div class="error-msg" id="siError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="siErrorText"></span>
+            </div>
+
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="siUsername" placeholder="Enter your username" autocomplete="username">
+            </div>
+
+            <button class="submit-btn" id="siNextBtn">Continue</button>
         </div>
 
-        <div class="field">
-            <label>Email address</label>
-            <input type="email" id="siEmail" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="field">
-            <label>Password</label>
-            <input type="password" id="siPassword" placeholder="••••••••" autocomplete="current-password">
+        <!-- Step 2: Password (slides in from right) -->
+        <div id="siStep2" style="display:none;">
+            <div class="eyebrow">Welcome back</div>
+            <h1 class="form-heading" style="font-size:26px;">Hi, <span id="siUsernameDisplay" style="color:var(--accent);"></span></h1>
+
+            <div class="error-msg" id="siPwError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="siPwErrorText"></span>
+            </div>
+
+            <div class="field">
+                <label>Password</label>
+                <input type="password" id="siPassword" placeholder="••••••••" autocomplete="current-password">
+            </div>
+
+            <button class="submit-btn" id="siBtn">Sign in</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                <button class="forgot-link" id="backToUsername" style="color:var(--ink-3);">← Not you?</button>
+                <button class="forgot-link" id="forgotLink">Forgot password?</button>
+            </div>
         </div>
 
-        <button class="submit-btn" id="siBtn">Sign in</button>
-        <button class="forgot-link" id="forgotLink">Forgot password?</button>
     </div>
 
     <!-- ── SIGN UP PANEL ── -->
@@ -305,7 +336,7 @@
     <!-- ── FORGOT PASSWORD PANEL ── -->
     <div class="form-panel" id="forgotPanel">
 
-        <!-- Step 1: Enter email -->
+        <!-- Step 1: Enter username -->
         <div id="fpStep1">
             <div class="eyebrow">Reset password</div>
             <h1 class="form-heading" style="font-size:26px;">Forgot password?</h1>
@@ -320,8 +351,8 @@
             </div>
 
             <div class="field">
-                <label>Your email address</label>
-                <input type="email" id="fpEmail" placeholder="you@example.com" autocomplete="email">
+                <label>Your username</label>
+                <input type="text" id="fpUsername" placeholder="Enter your username" autocomplete="username">
             </div>
 
             <button class="submit-btn" id="fpSendBtn">Send OTP</button>
@@ -530,36 +561,116 @@ $('suPassword').addEventListener('input',()=>{
 });
 
 /* ── SIGN IN ── */
+let resolvedEmail = ''; // email looked up from the username
+
+function showSiStep(n, direction='forward'){
+    const step1 = $('siStep1'), step2 = $('siStep2');
+    if(n === 2){
+        const outClass = direction==='forward' ? 'si-slide-out-left'  : 'si-slide-out-right';
+        const inClass  = direction==='forward' ? 'si-slide-in-right'  : 'si-slide-in-left';
+        step1.classList.add(outClass);
+        step1.addEventListener('animationend', ()=>{
+            step1.style.display='none';
+            step1.classList.remove(outClass);
+            step2.style.display='block';
+            step2.classList.add(inClass);
+            step2.addEventListener('animationend',()=>step2.classList.remove(inClass),{once:true});
+            $('siPassword').focus();
+        },{once:true});
+    } else {
+        const outClass = 'si-slide-out-right';
+        const inClass  = 'si-slide-in-left';
+        step2.classList.add(outClass);
+        step2.addEventListener('animationend',()=>{
+            step2.style.display='none';
+            step2.classList.remove(outClass);
+            step1.style.display='block';
+            step1.classList.add(inClass);
+            step1.addEventListener('animationend',()=>step1.classList.remove(inClass),{once:true});
+            $('siUsername').focus();
+        },{once:true});
+    }
+}
+
+// Step 1 — check username exists
+$('siNextBtn').addEventListener('click', handleUsernameStep);
+$('siUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') handleUsernameStep(); });
+
+async function handleUsernameStep(){
+    const errEl = $('siError'), errTx = $('siErrorText');
+    errEl.classList.remove('show');
+    const username = $('siUsername').value.trim();
+    if(!username){ errTx.textContent='Please enter your username.'; errEl.classList.add('show'); return; }
+
+    const btn = $('siNextBtn');
+    btn.innerHTML='<span class="btn-spinner"></span>Checking…'; btn.disabled=true;
+
+    try{
+        // Look up by username in Firestore
+        const snap = await getDocs(query(collection(db,'users'), where('username','==',username)));
+        if(snap.empty){
+            errTx.textContent='No account found with that username.';
+            errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+            btn.textContent='Continue'; btn.disabled=false; return;
+        }
+        const userData = snap.docs[0].data();
+
+        // Check ban
+        if(userData.banUntil && userData.banUntil > Date.now()){
+            const days = Math.ceil((userData.banUntil - Date.now())/86400000);
+            const isPerm = days > 3650;
+            const msg = isPerm ? 'Your account has been permanently restricted.' : `Your account is restricted for another ${days} day${days!==1?'s':''}.`;
+            const reason = userData.banReason ? ` Reason: ${userData.banReason}` : '';
+            errTx.textContent = msg + reason;
+            errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+            await logAttempt(userData.email||username, 'banned', isPerm?'Permanent':'Temporary');
+            btn.textContent='Continue'; btn.disabled=false; return;
+        }
+
+        resolvedEmail = userData.email || '';
+        $('siUsernameDisplay').textContent = username;
+        $('siPassword').value = '';
+        const pwErr = $('siPwError'); if(pwErr) pwErr.classList.remove('show');
+        btn.textContent='Continue'; btn.disabled=false;
+        showSiStep(2);
+    }catch(err){
+        errTx.textContent='Something went wrong. Please try again.';
+        errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+        btn.textContent='Continue'; btn.disabled=false;
+    }
+}
+
+// Back to username
+$('backToUsername').addEventListener('click',()=>{
+    $('siPassword').value='';
+    const pwErr=$('siPwError'); if(pwErr) pwErr.classList.remove('show');
+    showSiStep(1,'back');
+});
+
+// Step 2 — sign in with password
 $('siBtn').addEventListener('click', handleSignIn);
-['siEmail','siPassword'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') handleSignIn(); }));
+$('siPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') handleSignIn(); });
 
 async function handleSignIn(){
-    clearErrors();
-    const panel=$('signinPanel'), email=$('siEmail').value.trim(), pw=$('siPassword').value, btn=$('siBtn');
-    if(!email||!pw){ showError('si','Please fill in both fields.'); return; }
-    lockForm(panel); btn.innerHTML='<span class="btn-spinner"></span>Signing in…'; btn.disabled=true;
+    const errEl=$('siPwError'), errTx=$('siPwErrorText');
+    errEl.classList.remove('show');
+    const pw=$('siPassword').value, btn=$('siBtn');
+    if(!pw){ errTx.textContent='Please enter your password.'; errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show'); return; }
+    if(!resolvedEmail){ showSiStep(1,'back'); return; }
+
+    btn.innerHTML='<span class="btn-spinner"></span>Signing in…'; btn.disabled=true;
     try{
-        const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
-        if(!snap.empty){
-            const u=snap.docs[0].data();
-            if(u.banUntil&&u.banUntil>Date.now()){
-                const days=Math.ceil((u.banUntil-Date.now())/86400000);
-                const isPerm=days>3650;
-                const msg=isPerm?'Your account has been permanently restricted.':`Your account is restricted for another ${days} day${days!==1?'s':''}.`;
-                const reason=u.banReason?` Reason: ${u.banReason}`:'';
-                showError('si',msg+reason);
-                await logAttempt(email,'banned',isPerm?'Permanent':'Temporary');
-                btn.textContent='Sign in'; btn.disabled=false; unlockForm(panel); return;
-            }
-        }
-        await signInWithEmailAndPassword(auth,email,pw);
-        await logAttempt(email,'success');
+        await signInWithEmailAndPassword(auth, resolvedEmail, pw);
+        await logAttempt(resolvedEmail,'success');
         btn.innerHTML='✓ Signed in';
         setTimeout(()=>{ window.location.href='main.html'; },500);
     }catch(err){
-        await logAttempt(email,'fail',friendlyError(err.code));
-        showError('si',friendlyError(err.code));
-        btn.textContent='Sign in'; btn.disabled=false; unlockForm(panel);
+        await logAttempt(resolvedEmail,'fail',friendlyError(err.code));
+        errTx.textContent = err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'
+            ? 'Incorrect password. Try again.'
+            : friendlyError(err.code);
+        errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+        btn.textContent='Sign in'; btn.disabled=false;
     }
 }
 
@@ -636,13 +747,16 @@ async function sendOtp(email){
 /* Step 1 — Send OTP */
 $('fpSendBtn').addEventListener('click', async ()=>{
     clearErrors();
-    const email = $('fpEmail').value.trim();
-    const btn   = $('fpSendBtn');
-    if(!email){ showError('fp','Please enter your email address.'); return; }
+    const username = $('fpUsername').value.trim();
+    const btn      = $('fpSendBtn');
+    if(!username){ showError('fp','Please enter your username.'); return; }
 
-    // Check email exists in Firestore users
-    const snap = await getDocs(query(collection(db,'users'), where('email','==',email)));
-    if(snap.empty){ showError('fp','No account found with that email.'); return; }
+    // Look up email from username in Firestore
+    const snap = await getDocs(query(collection(db,'users'), where('username','==',username)));
+    if(snap.empty){ showError('fp','No account found with that username.'); return; }
+
+    const email = snap.docs[0].data().email;
+    if(!email){ showError('fp','No email linked to this account.'); return; }
 
     btn.innerHTML='<span class="btn-spinner"></span>Sending…'; btn.disabled=true;
 

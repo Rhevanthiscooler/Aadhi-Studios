@@ -139,7 +139,7 @@
     .page-counter{font-size:12px;color:rgba(255,255,255,.55);font-weight:500;min-width:80px;text-align:center;}
 
     .reader-viewport{flex:1;min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;position:relative;touch-action:pan-x pan-y;}
-    .reader-viewport.zoomed-wide{justify-content:flex-start;}
+    .reader-viewport.zoomed-wide{justify-content:flex-start;overflow-x:auto;}
 
     .book-page-stage{flex-shrink:0;perspective:1800px;-webkit-perspective:1800px;}
 
@@ -223,6 +223,7 @@
     .reader-loading p{font-size:14px;}
 
     .pdf-stack{display:flex;flex-direction:column;align-items:center;gap:20px;padding-bottom:40px;}
+    .zoom-wrap{display:inline-block;transform-origin:top left;}
     .pdf-page-canvas{box-shadow:0 4px 24px rgba(0,0,0,.4);max-width:100%;animation:rowRise .4s ease backwards;}
 
     .reader-comments-toggle{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .15s,transform .12s ease;display:flex;align-items:center;gap:6px;}
@@ -1251,21 +1252,48 @@ function applyZoomTransform(){
     const target=pageStageEl;
     if(!target)return;
     const total=readerMode==='pdf' ? userZoom : fitScale*userZoom;
+
+    // Use transform-origin top left so scaling expands rightward/downward
+    // then we set explicit width/height on the stage so the viewport
+    // scroll container sees the true scaled dimensions and scrolls correctly.
     target.style.transform=`scale(${total})`;
-    target.style.transformOrigin='top center';
+    target.style.transformOrigin='top left';
+
     if(readerMode==='docx'){
         const sz=PAGE_SIZES[currentStoryPageSize]||PAGE_SIZES.A4;
-        target.style.marginBottom=(sz.h*total - sz.h)+'px';
-        $('readerViewport').style.minHeight=(sz.h*total + 80)+'px';
+        const scaledW = Math.round(sz.w * total);
+        const scaledH = Math.round(sz.h * total);
+        // Expand the stage's layout footprint to match scaled size
+        target.style.width  = sz.w + 'px';
+        target.style.height = sz.h + 'px';
+        // Wrap in a sized container so scroll area knows the real dimensions
+        // target is book-page-stage, its parent is zoom-wrap
+        const wrap = target.parentElement;
+        if(wrap){
+            wrap.style.width  = scaledW + 'px';
+            wrap.style.height = scaledH + 'px';
+        }
     } else {
-        target.style.marginBottom='0px';
-        $('readerViewport').style.minHeight='';
+        // PDF: target IS the zoom-wrap, stack is inside
+        const stack = target.querySelector('.pdf-stack');
+        if(stack){
+            const naturalW = stack.scrollWidth  || stack.offsetWidth  || 0;
+            const naturalH = stack.scrollHeight || stack.offsetHeight || 0;
+            target.style.width  = Math.round(naturalW * total) + 'px';
+            target.style.height = Math.round(naturalH * total) + 'px';
+            stack.style.transform = `scale(${total})`;
+            stack.style.transformOrigin = 'top left';
+            target.style.transform = '';
+        }
     }
+
     $('zoomLabel').textContent=Math.round(userZoom*100)+'%';
 
+    // Center horizontally when content fits; left-align when wider than viewport
     const viewport=$('readerViewport');
-    const naturalWidth=target.offsetWidth||0;
-    viewport.classList.toggle('zoomed-wide', naturalWidth*total > viewport.clientWidth+1);
+    const wrap2 = readerMode==='pdf' ? target : target.parentElement;
+    const wrapW = wrap2 ? (parseInt(wrap2.style.width)||wrap2.offsetWidth||0) : 0;
+    viewport.classList.toggle('zoomed-wide', wrapW > viewport.clientWidth);
 }
 function setZoom(z){
     userZoom=Math.max(0.6, Math.min(2.5, z));
@@ -1323,7 +1351,11 @@ function renderCurrentPage(sz, direction){
 
     function finalizeNewPage(){
         viewport.innerHTML='';
-        viewport.appendChild(stage);
+        const zoomWrap=document.createElement('div');
+        zoomWrap.className='zoom-wrap';
+        zoomWrap.style.cssText='position:relative;flex-shrink:0;';
+        zoomWrap.appendChild(stage);
+        viewport.appendChild(zoomWrap);
         pageStageEl=stage;
         readerMode='docx';
         applyZoomTransform();
@@ -1382,7 +1414,11 @@ function buildPDFReader(typedArray){
         viewport2.innerHTML='';
         const stack=document.createElement('div');
         stack.className='pdf-stack';
-        viewport2.appendChild(stack);
+        const pdfWrap=document.createElement('div');
+        pdfWrap.className='zoom-wrap';
+        pdfWrap.style.cssText='position:relative;flex-shrink:0;';
+        pdfWrap.appendChild(stack);
+        viewport2.appendChild(pdfWrap);
 
         const vw = viewport2.clientWidth - 40;
         let chain=Promise.resolve();
@@ -1401,7 +1437,7 @@ function buildPDFReader(typedArray){
         }
         chain.then(()=>{
             readerMode='pdf';
-            pageStageEl=stack;
+            pageStageEl=pdfWrap;
             applyZoomTransform();
             $('zoomControls').classList.add('visible');
             $('zoomControls').style.bottom='16px';

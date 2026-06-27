@@ -806,7 +806,7 @@ $('exitAdminBtn').addEventListener('click',()=>{
 });
 
 /* ── OWNER GATE — only rhevanth@gmail.com sees the Owner button ── */
-const OWNER_EMAIL = 'rhevanth@gmail.com';
+const OWNER_EMAILS = ['rhevanth@gmail.com', 'indradamo@gmail.com'];
 
 $('ownerBtn').addEventListener('click',()=>{
     window.location.href='owner.html';
@@ -823,7 +823,7 @@ onAuthStateChanged(auth,async user=>{
         $('readerSignOutBtn').innerHTML=`<i class="fas fa-sign-out-alt"></i> Sign out (${currentUsername})`;
 
         // Show Owner button ONLY for rhevanth@gmail.com
-        if(user.email === OWNER_EMAIL){
+        if(OWNER_EMAILS.includes(user.email)){
             $('ownerBtn').style.display='inline-block';
             $('ownerSeparator').style.display='inline-block';
         } else {

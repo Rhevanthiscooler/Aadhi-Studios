@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
-    :root {
+    :root,html {
         --ink:       #0f0f0f;
         --ink-2:     #3a3a3a;
         --ink-3:     #767676;
@@ -199,12 +199,19 @@
         .maintenance-card { flex-direction:column; align-items:flex-start; }
     }
     </style>
+    <script>
+        // Apply saved theme instantly before page renders to avoid flash
+        (function(){
+            const t = localStorage.getItem('aadhi-theme');
+            if(t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
 </head>
 <body>
 
 <!-- NAV -->
 <nav class="nav">
-    <a class="nav-logo" href="#"><img src="https://raw.githubusercontent.com/Rhevanthiscooler/Aadhi-Studios/main/1782738366104.png" alt="Aadhi Studios" style="height:38px;width:auto;object-fit:contain;display:block;"></a>
+    <span class="nav-logo" style="font-family:'Playfair Display',serif;">Aadhi Studios</span>
     <span class="nav-badge"><i class="fas fa-crown"></i> Owner</span>
     <span class="nav-spacer"></span>
     <div style="position:relative;">

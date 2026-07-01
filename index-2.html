@@ -12,7 +12,7 @@
     <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    :root {
+    :root,html {
         --accent:    #3b3bd4;
         --accent-h:  #2828b8;
         --ink:       #0f0f0f;
@@ -28,6 +28,21 @@
         --dur:       0.62s;
         --ease:      cubic-bezier(0.76, 0, 0.24, 1);
     }
+
+    [data-theme="dark"] {
+        --accent:#5c5cff; --accent-h:#4444dd;
+        --ink:#f0f0f0; --ink-2:#c0c0c0; --ink-3:#888; --ink-4:#555;
+        --surface:#111113; --surface-2:#18181b; --surface-3:#222226;
+        background: linear-gradient(135deg, #111113 0%, #18181b 100%);
+    }
+    [data-theme="dark"] .card { background: #18181b; }
+    [data-theme="dark"] .form-panel { background: #18181b; }
+    [data-theme="dark"] .field input { background:#111113; color:#f0f0f0; border-color:#222226; }
+    [data-theme="dark"] .field input:focus { background:#1a1a1d; }
+    [data-theme="dark"] .brand-panel { background: linear-gradient(135deg, #000 0%, #0a0a0a 100%); }
+    [data-theme="dark"] .submit-btn { box-shadow: 0 4px 12px rgba(92,92,255,0.3); }
+    [data-theme="dark"] .error-msg { background:#2d1515; border-color:#7f1d1d; }
+    [data-theme="dark"] .success-msg { background:#0d2d1a; border-color:#14532d; }
 
     html, body {
         min-height: 100%;
@@ -300,6 +315,13 @@
     .si-slide-in-right, .si-slide-in-left { animation-timing-function: cubic-bezier(.16,1,.3,1); }
 
     </style>
+    <script>
+        // Apply saved theme instantly before page renders to avoid flash
+        (function(){
+            const t = localStorage.getItem('aadhi-theme');
+            if(t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
 </head>
 <body>
 
@@ -503,7 +525,7 @@
 
     <!-- ── BRAND PANEL ── -->
     <div class="brand-panel" id="brandPanel">
-        <img src="https://raw.githubusercontent.com/Rhevanthiscooler/Aadhi-Studios/main/1782738366104.png" alt="Aadhi Studios" style="height:56px;width:auto;object-fit:contain;display:block;filter:brightness(0) invert(1);">
+        <span class="brand-logo-text">Aadhi Studios</span>
 
         <div class="brand-body">
             <div class="brand-content signin-content">

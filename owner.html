@@ -197,6 +197,25 @@
     /* ── EMPTY STATE ── */
     .empty-row td { text-align:center; color:var(--ink-4); font-style:italic; padding:28px !important; }
 
+    /* ── ADS TAB ── */
+    .ad-mgmt-row { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--surface-3); animation:rowRise .3s ease backwards; }
+    .ad-mgmt-row:last-child { border-bottom:none; }
+    .ad-mgmt-thumb { width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0; background:var(--surface-3); }
+    .ad-mgmt-info { flex:1; min-width:0; }
+    .ad-mgmt-title { font-weight:600; font-size:14px; }
+    .ad-mgmt-sub { font-size:12px; color:var(--ink-3); margin-top:2px; }
+    .ad-type-tag { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--owner); background:var(--owner-bg); padding:2px 7px; border-radius:5px; margin-right:6px; }
+    .ad-type-tag.inactive { color:var(--ink-4); background:var(--surface-3); }
+
+    /* ── COMMENTS TAB ── */
+    .comment-mod-row { padding:14px 20px; border-bottom:1px solid var(--surface-3); animation:rowRise .3s ease backwards; }
+    .comment-mod-row:last-child { border-bottom:none; }
+    .comment-mod-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:4px; }
+    .comment-mod-user { font-weight:600; font-size:13px; }
+    .comment-mod-meta { font-size:11px; color:var(--ink-4); }
+    .comment-mod-text { font-size:13px; color:var(--ink-2); line-height:1.5; }
+    .comment-mod-chapter { font-size:11px; color:var(--ink-4); margin-top:6px; }
+
     @media(max-width:640px) {
         .owner-wrap { padding:24px 16px 80px; }
         .stat-grid { grid-template-columns:1fr 1fr; }
@@ -248,6 +267,8 @@
         <button class="owner-tab" data-tab="tabLogins"><i class="fas fa-shield-alt" style="margin-right:6px;"></i>Login Attempts</button>
         <button class="owner-tab" data-tab="tabBooks"><i class="fas fa-fire" style="margin-right:6px;"></i>Most Viewed</button>
         <button class="owner-tab" data-tab="tabUsers"><i class="fas fa-users" style="margin-right:6px;"></i>Users</button>
+        <button class="owner-tab" data-tab="tabAds"><i class="fas fa-ad" style="margin-right:6px;"></i>Ads</button>
+        <button class="owner-tab" data-tab="tabComments"><i class="fas fa-comments" style="margin-right:6px;"></i>Comments</button>
         <button class="owner-tab" data-tab="tabSettings"><i class="fas fa-sliders-h" style="margin-right:6px;"></i>Settings</button>
     </div>
 
@@ -284,6 +305,11 @@
                 <div class="stat-card-label">Banned Users</div>
                 <div class="stat-card-value" id="statBanned">—</div>
                 <div class="stat-card-sub" style="color:var(--danger);">Active bans</div>
+            </div>
+            <div class="stat-card" style="animation-delay:.30s">
+                <div class="stat-card-label">Active Ads</div>
+                <div class="stat-card-value" id="statActiveAds">—</div>
+                <div class="stat-card-sub" id="statAdsSub">of 0 total</div>
             </div>
         </div>
 
@@ -359,6 +385,37 @@
         </div>
     </div>
 
+    <!-- ── ADS ── -->
+    <div class="owner-panel" id="tabAds">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-ad"></i> Advertisements</span>
+                <span style="font-size:12px;color:var(--ink-4);" id="adsCount">Loading…</span>
+            </div>
+            <div id="adsMgmtList">
+                <div style="padding:28px;text-align:center;color:var(--ink-4);font-size:13px;font-style:italic;">Loading…</div>
+            </div>
+        </div>
+        <div class="card card-pad" style="margin-top:20px;">
+            <div style="font-size:13px;color:var(--ink-3);line-height:1.7;">
+                To add a new advertisement, use the <strong style="color:var(--ink);">Ads</strong> tab in the regular Admin panel. This tab is for oversight — enable, disable, or remove anything already live.
+            </div>
+        </div>
+    </div>
+
+    <!-- ── COMMENTS ── -->
+    <div class="owner-panel" id="tabComments">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-comments"></i> Reader Comments</span>
+                <span style="font-size:12px;color:var(--ink-4);" id="commentsCount">Loading…</span>
+            </div>
+            <div id="commentsModList">
+                <div style="padding:28px;text-align:center;color:var(--ink-4);font-size:13px;font-style:italic;">Loading…</div>
+            </div>
+        </div>
+    </div>
+
     <!-- ── SETTINGS ── -->
     <div class="owner-panel" id="tabSettings">
 
@@ -427,7 +484,7 @@
 import { initializeApp }  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, setDoc, getDocs, query, orderBy, limit, where }
+import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, setDoc, getDocs, query, orderBy, limit, where }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const app = initializeApp({
@@ -517,7 +574,7 @@ $('banModalClose').addEventListener('click', ()=>closeModal('banModal'));
    LIVE DATA
 ═══════════════════════════════════ */
 
-let users=[], stories=[], genres=[], parts=[], comments=[], loginAttempts=[], siteConfig={};
+let users=[], stories=[], genres=[], parts=[], comments=[], loginAttempts=[], siteConfig={}, ads=[];
 let banTargetUserId = null;
 let banType = 'days';
 let userChart = null;
@@ -529,6 +586,7 @@ function startOwnerDataListeners(){
     onSnapshot(collection(db,'genres'),  snap=>{ genres  = snap.docs.map(d=>({id:d.id,...d.data()})); refreshAll(); });
     onSnapshot(collection(db,'parts'),   snap=>{ parts   = snap.docs.map(d=>({id:d.id,...d.data()})); refreshAll(); });
     onSnapshot(collection(db,'comments'),snap=>{ comments= snap.docs.map(d=>({id:d.id,...d.data()})); refreshAll(); });
+    onSnapshot(collection(db,'ads'),     snap=>{ ads     = snap.docs.map(d=>({id:d.id,...d.data()})); renderAdsTab(); });
     onSnapshot(collection(db,'loginAttempts'), snap=>{ loginAttempts = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); renderLoginAttempts(); });
     onSnapshot(doc(db,'config','site'), snap=>{
         if(snap.exists()){ siteConfig = snap.data(); }
@@ -542,6 +600,7 @@ function refreshAll(){
     renderUserChart();
     renderMostViewed();
     renderUsersTable();
+    renderCommentsTab();
 }
 
 /* ── STATS ── */
@@ -704,6 +763,81 @@ function renderUsersTable(){
         </tr>`;
     }).join('');
 }
+
+/* ── ADS (oversight — enable/disable/delete only; creating a new ad still
+   happens from the regular Admin panel's Ads tab) ── */
+const AD_TYPE_LABELS = { banner:'Banner', popup:'Pop-up', interstitial:'Interstitial' };
+function renderAdsTab(){
+    const activeCount = ads.filter(a=>a.active).length;
+    $('statActiveAds').textContent = activeCount;
+    $('statAdsSub').textContent = `of ${ads.length} total`;
+    $('adsCount').textContent = ads.length + (ads.length===1?' ad':' ads');
+
+    const container = $('adsMgmtList');
+    if(ads.length === 0){
+        container.innerHTML = `<div style="padding:28px;text-align:center;color:var(--ink-4);font-size:13px;font-style:italic;">No advertisements yet.</div>`;
+        return;
+    }
+    container.innerHTML = ads.map((a,i)=>`<div class="ad-mgmt-row" style="animation-delay:${(i*0.04).toFixed(2)}s">
+        <img class="ad-mgmt-thumb" src="${a.imageUrl||''}" onerror="this.style.visibility='hidden'">
+        <div class="ad-mgmt-info">
+            <div class="ad-mgmt-title"><span class="ad-type-tag${a.active?'':' inactive'}">${AD_TYPE_LABELS[a.type]||a.type}</span>${escapeHtml(a.title||'Untitled')}</div>
+            <div class="ad-mgmt-sub">${a.active?'Active':'Inactive'}${a.linkUrl?' · Links to '+escapeHtml(a.linkUrl):''}</div>
+        </div>
+        <div style="display:flex;flex-shrink:0;">
+            <button class="action-btn ban" onclick="window._toggleAdActive('${a.id}',${!!a.active})">${a.active?'Disable':'Enable'}</button>
+            <button class="action-btn delete" onclick="window._deleteAd('${a.id}')">Delete</button>
+        </div>
+    </div>`).join('');
+}
+window._toggleAdActive = async function(adId, currentActive){
+    try{
+        await updateDoc(doc(db,'ads',adId), { active: !currentActive });
+        toast(currentActive ? 'Advertisement disabled.' : 'Advertisement enabled.');
+    }catch(err){ toast('Could not update advertisement: '+(err?.message||'unknown error')); }
+};
+window._deleteAd = async function(adId){
+    const ad = ads.find(a=>a.id===adId); if(!ad) return;
+    if(!confirm(`Delete the "${ad.title||'Untitled'}" advertisement? This cannot be undone.`)) return;
+    try{
+        await deleteDoc(doc(db,'ads',adId));
+        toast('Advertisement deleted.');
+    }catch(err){ toast('Could not delete: '+(err?.message||'unknown error')); }
+};
+
+/* ── COMMENTS MODERATION (site-wide, newest first) ── */
+function renderCommentsTab(){
+    const container = $('commentsModList');
+    if(!container) return; // tab not on this page yet, or DOM not ready
+    $('commentsCount').textContent = comments.length + (comments.length===1?' comment':' comments');
+    if(comments.length === 0){
+        container.innerHTML = `<div style="padding:28px;text-align:center;color:var(--ink-4);font-size:13px;font-style:italic;">No comments yet.</div>`;
+        return;
+    }
+    const sorted = [...comments].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,200);
+    container.innerHTML = sorted.map((c,i)=>{
+        const part = parts.find(p=>p.fileUrl===c.chapterUrl);
+        const time = c.timestamp ? new Date(c.timestamp).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+        return `<div class="comment-mod-row" style="animation-delay:${(i*0.02).toFixed(2)}s">
+            <div class="comment-mod-head">
+                <span class="comment-mod-user">${escapeHtml(c.username||'Anonymous')}</span>
+                <span class="comment-mod-meta">${time}</span>
+            </div>
+            <div class="comment-mod-text">${escapeHtml(c.text||'')}</div>
+            <div class="comment-mod-chapter">
+                <i class="fas fa-book" style="margin-right:4px;"></i>${part?escapeHtml(part.name):'Unknown chapter'}
+                <button class="action-btn delete" style="margin-left:10px;" onclick="window._deleteComment('${c.id}')">Delete</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+window._deleteComment = async function(commentId){
+    if(!confirm('Delete this comment? This cannot be undone.')) return;
+    try{
+        await deleteDoc(doc(db,'comments',commentId));
+        toast('Comment deleted.');
+    }catch(err){ toast('Could not delete: '+(err?.message||'unknown error')); }
+};
 
 /* ── MAINTENANCE MODE ── */
 function renderMaintenance(){

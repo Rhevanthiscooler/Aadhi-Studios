@@ -575,7 +575,7 @@ function wireSearchRowActions(){
     document.querySelectorAll('#userSearchResults .search-result-row').forEach(row=>{
         const uid = row.dataset.uid, uname = row.dataset.username || 'Reader';
         row.querySelectorAll('.view-profile').forEach(el=>{
-            el.addEventListener('click', ()=>{ if(uid) window.location.href = `profile.html?uid=${encodeURIComponent(uid)}`; });
+            el.addEventListener('click', ()=>{ if(uid) window.location.href = `account.html?uid=${encodeURIComponent(uid)}`; });
         });
 
         const addBtn = row.querySelector('.addfriend-btn');

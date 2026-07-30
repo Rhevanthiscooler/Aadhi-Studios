@@ -50,8 +50,26 @@
         background:linear-gradient(135deg,var(--accent),var(--accent-h));
         color:#fff;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;
         display:flex;align-items:center;justify-content:center;
-        margin:0 auto 16px;
+        overflow:hidden;
     }
+    .account-avatar img{width:100%;height:100%;object-fit:cover;}
+    .account-avatar-wrap{position:relative;width:72px;margin:0 auto 16px;}
+    .avatar-edit-btn{
+        position:absolute;bottom:-2px;right:-2px;width:26px;height:26px;border-radius:50%;
+        background:var(--accent);color:#fff;border:2px solid var(--surface);cursor:pointer;
+        display:flex;align-items:center;justify-content:center;font-size:11px;
+        transition:background .12s,transform .15s ease;
+    }
+    .avatar-edit-btn:hover{background:var(--accent-h);transform:scale(1.08);}
+    .avatar-picker-row{display:flex;flex-direction:column;gap:10px;}
+    .avatar-picker-option{
+        display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:10px;
+        border:1px solid var(--surface-3);background:var(--surface-2);color:var(--ink);
+        font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;
+        transition:background .12s,border-color .12s;
+    }
+    .avatar-picker-option:hover{background:var(--surface-3);border-color:var(--accent);}
+    .avatar-picker-option i{color:var(--accent);font-size:16px;width:18px;text-align:center;}
     .account-name{font-size:19px;font-weight:600;text-align:center;color:var(--ink);font-family:'Playfair Display',serif;}
     .account-email{font-size:13.5px;color:var(--ink-3);text-align:center;margin-top:4px;margin-bottom:26px;}
 
@@ -165,6 +183,55 @@
     .search-result-books .lbl{font-size:10px;color:var(--ink-3);}
     .user-search-note{text-align:center;padding:16px 0;color:var(--ink-3);font-size:13.5px;}
 
+    /* ── Friend requests ── */
+    .request-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--surface-3);}
+    .request-avatar{
+        width:38px;height:38px;flex-shrink:0;border-radius:50%;overflow:hidden;
+        background:linear-gradient(135deg,var(--accent),var(--accent-h));color:#fff;
+        font-family:'Playfair Display',serif;font-size:15px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;
+    }
+    .request-avatar img{width:100%;height:100%;object-fit:cover;}
+    .request-name{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);}
+    .request-actions{display:flex;gap:6px;flex-shrink:0;}
+    .request-btn{
+        padding:7px 12px;border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;
+        cursor:pointer;border:1px solid var(--surface-3);background:none;transition:background .12s;
+    }
+    .request-btn.accept{background:var(--accent);color:#fff;border-color:var(--accent);}
+    .request-btn.accept:hover{background:var(--accent-h);}
+    .request-btn.decline{color:var(--ink-3);}
+    .request-btn.decline:hover{background:var(--surface-2);}
+
+    /* ── Friends strip ── */
+    .friends-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .friends-header h3{font-size:14px;font-weight:600;color:var(--ink);}
+    .friends-count{font-size:12px;color:var(--ink-3);}
+    .friends-strip{display:flex;gap:16px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
+    .friends-strip::-webkit-scrollbar{height:5px;}
+    .friends-strip::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:4px;}
+    .friend-chip{flex-shrink:0;width:66px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;text-align:center;}
+    .friend-chip-avatar{
+        width:52px;height:52px;border-radius:50%;overflow:hidden;
+        background:linear-gradient(135deg,var(--accent),var(--accent-h));color:#fff;
+        font-family:'Playfair Display',serif;font-size:19px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;transition:transform .15s ease;
+    }
+    .friend-chip:hover .friend-chip-avatar{transform:scale(1.06);}
+    .friend-chip-avatar img{width:100%;height:100%;object-fit:cover;}
+    .friend-chip-name{font-size:11.5px;color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+    .friends-empty-note{color:var(--ink-3);font-size:13.5px;padding:6px 0 2px;}
+
+    /* ── Find readers CTA ── */
+    .find-readers-btn{
+        width:100%;margin-top:20px;padding:15px;border-radius:14px;border:none;
+        background:linear-gradient(135deg,var(--accent),var(--accent-h));color:#fff;
+        font-family:'Inter',sans-serif;font-size:14.5px;font-weight:600;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;gap:9px;
+        transition:transform .15s ease,box-shadow .15s ease;box-shadow:0 6px 18px rgba(59,59,212,.25);
+    }
+    .find-readers-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(59,59,212,.32);}
+
     .account-guest-note{font-size:14.5px;color:var(--ink-2);text-align:center;line-height:1.7;padding:20px 0;}
     .account-guest-note i{font-size:32px;color:var(--ink-4);display:block;margin-bottom:14px;}
     .account-guest-note a{color:var(--accent);text-decoration:none;font-weight:600;}
@@ -194,20 +261,28 @@
 <div class="page-wrap">
     <div class="account-card" id="accountCard">
         <div style="text-align:center;padding:20px 0;">
-            <div class="account-avatar" style="background:var(--surface-3);"></div>
+            <div class="account-avatar-wrap"><div class="account-avatar" style="background:var(--surface-3);"></div></div>
             <div class="skeleton-line" style="width:140px;"></div>
             <div class="skeleton-line" style="width:180px;"></div>
         </div>
     </div>
 
-    <div class="account-card" id="searchCard" style="margin-top:20px;">
-        <div class="modal-heading" style="margin-bottom:16px;font-size:16px;"><i class="fas fa-search" style="color:var(--accent);margin-right:6px;"></i>Find other readers</div>
-        <div class="user-search-bar">
-            <input type="text" id="userSearchInput" placeholder="Search by username…">
-            <button id="userSearchBtn"><i class="fas fa-search"></i></button>
-        </div>
-        <div id="userSearchResults"></div>
+    <div class="account-card" id="requestsCard" style="margin-top:20px;display:none;">
+        <div class="modal-heading" style="margin-bottom:6px;font-size:16px;"><i class="fas fa-user-clock" style="color:var(--accent);margin-right:6px;"></i>Friend requests</div>
+        <div id="requestsList"></div>
     </div>
+
+    <div class="account-card" id="friendsCard" style="margin-top:20px;">
+        <div class="friends-header">
+            <h3><i class="fas fa-user-friends" style="color:var(--accent);margin-right:6px;"></i>Friends</h3>
+            <span class="friends-count" id="friendsCount"></span>
+        </div>
+        <div class="friends-strip" id="friendsStrip">
+            <div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div>
+        </div>
+    </div>
+
+    <button class="find-readers-btn" id="findReadersBtn"><i class="fas fa-search"></i> Searching for any reader?</button>
 </div>
 
 <div id="toast"></div>
@@ -233,10 +308,27 @@
     </div>
 </div>
 
+<!-- Change photo: pick "take a photo" (opens the device camera on mobile)
+     or "choose from gallery". Both routes just feed a file into the same
+     Cloudinary upload + photoURL save. -->
+<div class="modal-overlay" id="avatarModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="avatarModal">×</button>
+        <div class="modal-heading"><i class="fas fa-camera" style="color:var(--accent);margin-right:8px;"></i>Change photo</div>
+        <div class="avatar-picker-row">
+            <div class="avatar-picker-option" id="takePhotoOption"><i class="fas fa-camera"></i> Take a photo</div>
+            <div class="avatar-picker-option" id="choosePhotoOption"><i class="fas fa-images"></i> Choose from gallery</div>
+        </div>
+        <div class="modal-error" id="avatarError" style="margin-top:12px;"></div>
+    </div>
+</div>
+<input type="file" id="avatarCameraInput" accept="image/*" capture="user" style="display:none;">
+<input type="file" id="avatarGalleryInput" accept="image/*" style="display:none;">
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signOut, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, verifyBeforeUpdateEmail } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, collection, doc, query, where, getDocs, getDoc, updateDoc, setDoc, deleteDoc, addDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const app  = initializeApp({
     apiKey:"AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
@@ -251,7 +343,15 @@ const db   = getFirestore(app);
 
 const $ = id => document.getElementById(id);
 
+/* ── CLOUDINARY (same free hosting the app already uses for chapter/ad files) ── */
+const CLOUDINARY_CLOUD_NAME = 'dfmidzcom';
+const CLOUDINARY_UPLOAD_PRESET = 'aadhi_chapters';
+
 function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function avatarInner(photoURL, name){
+    const initial = (name||'?').trim().charAt(0).toUpperCase() || '?';
+    return photoURL ? `<img src="${escapeHtml(photoURL)}" alt="">` : initial;
+}
 
 function toast(msg){
     const t=$('toast');
@@ -260,10 +360,23 @@ function toast(msg){
     setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-$('backBtn').addEventListener('click',()=>{ window.location.href='main.html'; });
+const urlParams = new URLSearchParams(location.search);
+const viewUid = urlParams.get('uid');
+
+$('backBtn').addEventListener('click',()=>{
+    if(viewUid){ (document.referrer && document.referrer.includes(location.host)) ? history.back() : window.location.href='account.html'; }
+    else window.location.href='main.html';
+});
+if(viewUid) $('backBtn').innerHTML = '<i class="fas fa-arrow-left"></i> Back';
+$('findReadersBtn').addEventListener('click',()=>{ window.location.href='chat.html'; });
+
+let myUid = null, myUsername = 'Reader', myUserDocRef = null;
 
 onAuthStateChanged(auth, async user => {
     const card = $('accountCard');
+    $('requestsCard').style.display = 'none';
+    $('friendsCard').style.display = 'none';
+    $('findReadersBtn').style.display = 'none';
 
     if(!user){
         card.innerHTML = `
@@ -275,8 +388,14 @@ onAuthStateChanged(auth, async user => {
         return;
     }
 
+    myUid = user.uid;
+
+    if(viewUid && viewUid !== myUid){
+        return renderOtherProfile(viewUid);
+    }
+
     // 1) Basic profile from the 'users' collection
-    let username='Reader', dob='—', createdAt=null, bio='', myUserDocRef=null;
+    let username='Reader', dob='—', createdAt=null, bio='', photoURL='', friends=[];
     try{
         const snap = await getDocs(query(collection(db,'users'), where('uid','==',user.uid)));
         if(!snap.empty){
@@ -285,9 +404,12 @@ onAuthStateChanged(auth, async user => {
             dob = d.dob || '—';
             createdAt = d.createdAt || null;
             bio = d.bio || '';
+            photoURL = d.photoURL || '';
+            friends = d.friends || [];
             myUserDocRef = snap.docs[0].ref;
         }
     }catch{ /* keep defaults */ }
+    myUsername = username;
 
     // 2) Comments posted (by username)
     let commentCount = 0;
@@ -307,10 +429,12 @@ onAuthStateChanged(auth, async user => {
     const memberSince = createdAt
         ? new Date(createdAt).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})
         : '—';
-    const initial = (username||'?').trim().charAt(0).toUpperCase() || '?';
 
     card.innerHTML = `
-        <div class="account-avatar">${initial}</div>
+        <div class="account-avatar-wrap">
+            <div class="account-avatar" id="myAvatar">${avatarInner(photoURL, username)}</div>
+            <button class="avatar-edit-btn" id="avatarEditBtn" title="Change photo"><i class="fas fa-camera"></i></button>
+        </div>
         <div class="account-name">${escapeHtml(username)}</div>
         <div class="account-email">${escapeHtml(user.email||'')}</div>
 
@@ -352,7 +476,303 @@ onAuthStateChanged(auth, async user => {
     card.querySelector('.account-signout-btn').insertAdjacentElement('beforebegin', secDiv);
     $('changePwBtn').addEventListener('click', openPasswordModal);
     $('changeEmailBtn').addEventListener('click', openEmailModal);
+
+    $('avatarEditBtn').addEventListener('click', ()=>{ $('avatarError').textContent=''; openModal('avatarModal'); });
+
+    loadFriendRequests();
+    loadFriends(friends);
 });
+
+/* ══ VIEWING SOMEONE ELSE'S PROFILE (?uid=...) ══
+   Reuses the same #accountCard and #friendsCard the self-view uses, just
+   filled in with read-only info plus relationship actions instead of the
+   editable bio/security/friends-of-mine controls. */
+async function renderOtherProfile(targetUid){
+    const card = $('accountCard');
+    card.innerHTML = `<div style="text-align:center;padding:40px 0;"><i class="fas fa-spinner fa-spin" style="color:var(--ink-3);"></i></div>`;
+
+    let target = null, targetDocRef = null;
+    try{
+        const snap = await getDocs(query(collection(db,'users'), where('uid','==',targetUid)));
+        if(!snap.empty){ target = snap.docs[0].data(); targetDocRef = snap.docs[0].ref; }
+    }catch{ /* fall through to not-found */ }
+
+    if(!target){
+        card.innerHTML = `<div class="account-guest-note"><i class="fas fa-user-slash"></i>This reader could not be found.</div>`;
+        return;
+    }
+
+    let myFriends=[], myBlocked=[];
+    try{
+        const meSnap = await getDocs(query(collection(db,'users'), where('uid','==',myUid)));
+        if(!meSnap.empty){
+            const meData = meSnap.docs[0].data();
+            myUsername = meData.username || myUsername;
+            myUserDocRef = meSnap.docs[0].ref;
+            myFriends = meData.friends || [];
+            myBlocked = meData.blocked || [];
+        }
+    }catch{ /* keep defaults */ }
+
+    const targetBlocked = target.blocked || [];
+    const targetFriends = target.friends || [];
+    const theyBlockedMe = targetBlocked.includes(myUid);
+    const iBlockedThem  = myBlocked.includes(targetUid);
+    const areFriends    = myFriends.includes(targetUid);
+    const username = target.username || 'Reader';
+    const bio = target.bio || '';
+    const photoURL = target.photoURL || '';
+
+    if(theyBlockedMe){
+        card.innerHTML = `
+            <div class="account-avatar-wrap"><div class="account-avatar">${avatarInner('', username)}</div></div>
+            <div class="account-name">${escapeHtml(username)}</div>
+            <div class="account-email">This reader's profile isn't available to you.</div>`;
+        return;
+    }
+
+    let commentCount = 0, booksRead = 0;
+    try{
+        const cSnap = await getDocs(query(collection(db,'comments'), where('username','==',username)));
+        commentCount = cSnap.size;
+    }catch{ /* leave at 0 */ }
+    try{
+        const rSnap = await getDocs(query(collection(db,'readingLog'), where('uid','==',targetUid)));
+        booksRead = rSnap.size;
+    }catch{ /* leave at 0 */ }
+
+    card.innerHTML = `
+        <div class="account-avatar-wrap"><div class="account-avatar">${avatarInner(photoURL, username)}</div></div>
+        <div class="account-name">${escapeHtml(username)}</div>
+
+        <div class="account-stats">
+            <div class="account-stat-card"><div class="num">${booksRead}</div><div class="lbl">Books read</div></div>
+            <div class="account-stat-card"><div class="num">${commentCount}</div><div class="lbl">Comments posted</div></div>
+        </div>
+
+        <div class="account-bio-block">
+            <div class="account-bio-label">Bio</div>
+            <div class="account-bio-text">${bio ? escapeHtml(bio) : '<span class="account-bio-placeholder">No bio yet.</span>'}</div>
+        </div>
+
+        <div class="profile-actions" id="profileActions"></div>
+    `;
+
+    function renderActions(html){ $('profileActions').innerHTML = html; }
+
+    async function blockUser(){
+        if(!confirm(`Block ${username}? They won't be able to message or friend-request you.`)) return;
+        try{
+            await updateDoc(myUserDocRef, { blocked: arrayUnion(targetUid), friends: arrayRemove(targetUid) });
+            if(targetDocRef) await updateDoc(targetDocRef, { friends: arrayRemove(myUid) });
+            toast(`${username} has been blocked.`);
+            renderOtherProfile(targetUid);
+        }catch{ toast('Could not block that reader. Please try again.'); }
+    }
+
+    if(iBlockedThem){
+        renderActions(`<button class="profile-action-btn" id="unblockBtn"><i class="fas fa-user-check"></i> Unblock</button>`);
+        $('unblockBtn').addEventListener('click', async ()=>{
+            await updateDoc(myUserDocRef, { blocked: arrayRemove(targetUid) });
+            toast(`${username} has been unblocked.`);
+            renderOtherProfile(targetUid);
+        });
+    } else if(areFriends){
+        renderActions(`
+            <button class="profile-action-btn primary" id="messageBtn"><i class="fas fa-comment-dots"></i> Message</button>
+            <button class="profile-action-btn" id="unfriendBtn"><i class="fas fa-user-minus"></i> Unfriend</button>
+            <button class="profile-action-btn danger" id="blockBtn"><i class="fas fa-ban"></i> Block</button>`);
+        $('messageBtn').addEventListener('click', ()=>{ window.location.href = `chat.html?uid=${encodeURIComponent(targetUid)}`; });
+        $('unfriendBtn').addEventListener('click', async ()=>{
+            await updateDoc(myUserDocRef, { friends: arrayRemove(targetUid) });
+            if(targetDocRef) await updateDoc(targetDocRef, { friends: arrayRemove(myUid) });
+            toast(`You unfriended ${username}.`);
+            renderOtherProfile(targetUid);
+        });
+        $('blockBtn').addEventListener('click', blockUser);
+    } else {
+        let pendingId=null, pendingDirection=null;
+        try{
+            const sentSnap = await getDocs(query(collection(db,'friendRequests'), where('fromUid','==',myUid), where('toUid','==',targetUid), where('status','==','pending')));
+            if(!sentSnap.empty){ pendingId=sentSnap.docs[0].id; pendingDirection='sent'; }
+            else{
+                const recvSnap = await getDocs(query(collection(db,'friendRequests'), where('fromUid','==',targetUid), where('toUid','==',myUid), where('status','==','pending')));
+                if(!recvSnap.empty){ pendingId=recvSnap.docs[0].id; pendingDirection='received'; }
+            }
+        }catch{ /* treat as no pending request */ }
+
+        if(pendingDirection==='sent'){
+            renderActions(`
+                <button class="profile-action-btn" disabled><i class="fas fa-clock"></i> Request sent</button>
+                <button class="profile-action-btn danger" id="blockBtn"><i class="fas fa-ban"></i> Block</button>`);
+            $('blockBtn').addEventListener('click', blockUser);
+        } else if(pendingDirection==='received'){
+            renderActions(`
+                <button class="profile-action-btn primary" id="acceptBtn"><i class="fas fa-check"></i> Accept</button>
+                <button class="profile-action-btn" id="declineBtn"><i class="fas fa-times"></i> Decline</button>`);
+            $('acceptBtn').addEventListener('click', async ()=>{
+                await updateDoc(myUserDocRef, { friends: arrayUnion(targetUid) });
+                if(targetDocRef) await updateDoc(targetDocRef, { friends: arrayUnion(myUid) });
+                await deleteDoc(doc(db,'friendRequests',pendingId));
+                toast(`You and ${username} are now friends.`);
+                renderOtherProfile(targetUid);
+            });
+            $('declineBtn').addEventListener('click', async ()=>{
+                await deleteDoc(doc(db,'friendRequests',pendingId));
+                toast('Request declined.');
+                renderOtherProfile(targetUid);
+            });
+        } else {
+            renderActions(`
+                <button class="profile-action-btn primary" id="addFriendBtn"><i class="fas fa-user-plus"></i> Add friend</button>
+                <button class="profile-action-btn danger" id="blockBtn"><i class="fas fa-ban"></i> Block</button>`);
+            $('addFriendBtn').addEventListener('click', async ()=>{
+                const btn = $('addFriendBtn');
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+                try{
+                    await setDoc(doc(collection(db,'friendRequests')), {
+                        fromUid: myUid, fromUsername: myUsername,
+                        toUid: targetUid, toUsername: username,
+                        status: 'pending', createdAt: Date.now()
+                    });
+                    toast(`Friend request sent to ${username}.`);
+                    renderOtherProfile(targetUid);
+                }catch{
+                    toast('Could not send that request. Please try again.');
+                    btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Add friend';
+                }
+            });
+            $('blockBtn').addEventListener('click', blockUser);
+        }
+    }
+
+    // Their friends — reuses the same friends strip markup/styles as the self-view.
+    loadFriends(targetFriends);
+    $('friendsCard').querySelector('.friends-header h3').innerHTML = '<i class="fas fa-user-friends" style="color:var(--accent);margin-right:6px;"></i>Friends';
+}
+
+/* ══ CHANGE PHOTO ══ */
+$('takePhotoOption').addEventListener('click', ()=>{ $('avatarCameraInput').click(); });
+$('choosePhotoOption').addEventListener('click', ()=>{ $('avatarGalleryInput').click(); });
+$('avatarCameraInput').addEventListener('change', e=> handleAvatarFile(e.target.files[0]));
+$('avatarGalleryInput').addEventListener('change', e=> handleAvatarFile(e.target.files[0]));
+
+function uploadAvatarImage(file){
+    return new Promise((resolve,reject)=>{
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+        xhr.onload = ()=>{
+            if(xhr.status>=200 && xhr.status<300){
+                try{ resolve(JSON.parse(xhr.responseText).secure_url); }
+                catch(e){ reject(e); }
+            } else reject(new Error('Image upload failed'));
+        };
+        xhr.onerror = ()=>reject(new Error('Network error during image upload'));
+        xhr.send(formData);
+    });
+}
+
+async function handleAvatarFile(file){
+    if(!file) return;
+    if(!myUserDocRef){ $('avatarError').textContent = 'Could not find your profile record.'; return; }
+    $('avatarError').textContent = '';
+    const pickerOptions = document.querySelectorAll('.avatar-picker-option');
+    pickerOptions.forEach(o=>o.style.opacity='.5');
+    try{
+        const url = await uploadAvatarImage(file);
+        await updateDoc(myUserDocRef, { photoURL: url });
+        $('myAvatar').innerHTML = avatarInner(url, myUsername);
+        closeModal('avatarModal');
+        toast('Profile photo updated.');
+    }catch(err){
+        $('avatarError').textContent = 'Could not upload that photo. Please try again.';
+    }finally{
+        pickerOptions.forEach(o=>o.style.opacity='1');
+        $('avatarCameraInput').value=''; $('avatarGalleryInput').value='';
+    }
+}
+
+/* ══ FRIEND REQUESTS — pending incoming requests, accept/decline ══ */
+async function loadFriendRequests(){
+    const reqCard = $('requestsCard'), listEl = $('requestsList');
+    try{
+        const snap = await getDocs(query(collection(db,'friendRequests'), where('toUid','==',myUid), where('status','==','pending')));
+        if(snap.empty){ reqCard.style.display='none'; return; }
+        reqCard.style.display='block';
+        listEl.innerHTML = snap.docs.map(d=>{
+            const r = d.data();
+            return `
+                <div class="request-row" data-id="${d.id}" data-from="${escapeHtml(r.fromUid)}" data-fromname="${escapeHtml(r.fromUsername||'Reader')}">
+                    <div class="request-avatar">${avatarInner(r.fromPhoto, r.fromUsername)}</div>
+                    <div class="request-name">${escapeHtml(r.fromUsername||'Reader')}</div>
+                    <div class="request-actions">
+                        <button class="request-btn accept">Accept</button>
+                        <button class="request-btn decline">Decline</button>
+                    </div>
+                </div>`;
+        }).join('');
+        listEl.querySelectorAll('.request-row').forEach(row=>{
+            row.querySelector('.accept').addEventListener('click', ()=> respondToRequest(row.dataset.id, row.dataset.from, row.dataset.fromname, true));
+            row.querySelector('.decline').addEventListener('click', ()=> respondToRequest(row.dataset.id, row.dataset.from, row.dataset.fromname, false));
+        });
+    }catch{
+        reqCard.style.display='none';
+    }
+}
+
+async function respondToRequest(reqId, fromUid, fromUsername, accept){
+    try{
+        if(accept){
+            await updateDoc(myUserDocRef, { friends: arrayUnion(fromUid) });
+            const otherSnap = await getDocs(query(collection(db,'users'), where('uid','==',fromUid)));
+            if(!otherSnap.empty) await updateDoc(otherSnap.docs[0].ref, { friends: arrayUnion(myUid) });
+            toast(`You and ${fromUsername} are now friends.`);
+        }else{
+            toast('Request declined.');
+        }
+        await deleteDoc(doc(db,'friendRequests',reqId));
+        loadFriendRequests();
+        const snap = await getDocs(query(collection(db,'users'), where('uid','==',myUid)));
+        loadFriends(!snap.empty ? (snap.docs[0].data().friends||[]) : []);
+    }catch{
+        toast('Something went wrong. Please try again.');
+    }
+}
+
+/* ══ FRIENDS STRIP ══ */
+async function loadFriends(friendUids){
+    const stripEl = $('friendsStrip'), countEl = $('friendsCount'), cardEl = $('friendsCard');
+    cardEl.style.display='block';
+    countEl.textContent = friendUids.length ? `${friendUids.length}` : '';
+    if(!friendUids.length){
+        stripEl.innerHTML = `<div class="friends-empty-note">No friends yet — find readers below and send a request.</div>`;
+        return;
+    }
+    stripEl.innerHTML = `<div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div>`;
+    try{
+        const chips = await Promise.all(friendUids.map(async fUid=>{
+            try{
+                const snap = await getDocs(query(collection(db,'users'), where('uid','==',fUid)));
+                if(snap.empty) return '';
+                const d = snap.docs[0].data();
+                return `
+                    <div class="friend-chip" data-uid="${escapeHtml(fUid)}">
+                        <div class="friend-chip-avatar">${avatarInner(d.photoURL, d.username)}</div>
+                        <div class="friend-chip-name">${escapeHtml(d.username||'Reader')}</div>
+                    </div>`;
+            }catch{ return ''; }
+        }));
+        stripEl.innerHTML = chips.join('') || `<div class="friends-empty-note">No friends yet.</div>`;
+        stripEl.querySelectorAll('.friend-chip').forEach(chip=>{
+            chip.addEventListener('click', ()=>{ window.location.href = `account.html?uid=${encodeURIComponent(chip.dataset.uid)}`; });
+        });
+    }catch{
+        stripEl.innerHTML = `<div class="friends-empty-note">Could not load friends.</div>`;
+    }
+}
 
 /* ══ BIO — view/edit toggle ══ */
 function renderBioEditMode(currentBio, userDocRef){
@@ -398,61 +818,8 @@ function renderBioViewMode(bio, userDocRef){
     $('bioEditBtn').addEventListener('click', ()=> renderBioEditMode(bio, userDocRef));
 }
 
-/* ══ FIND OTHER READERS ══
-   Deliberately only ever reads username, bio, and a books-read count for
-   search results — date of birth is never fetched or shown here, even
-   though it's visible on your own account above. */
-$('userSearchBtn').addEventListener('click', doUserSearch);
-$('userSearchInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUserSearch(); });
-
-async function doUserSearch(){
-    const term = $('userSearchInput').value.trim();
-    const resultsEl = $('userSearchResults');
-    if(!term){ resultsEl.innerHTML=''; return; }
-
-    resultsEl.innerHTML = `<div class="user-search-note"><i class="fas fa-spinner fa-spin"></i></div>`;
-
-    try{
-        // Prefix match on username (Firestore has no native "contains" search)
-        const snap = await getDocs(query(
-            collection(db,'users'),
-            where('username','>=',term),
-            where('username','<=',term+'\uf8ff')
-        ));
-
-        if(snap.empty){
-            resultsEl.innerHTML = `<div class="user-search-note">No readers found matching "${escapeHtml(term)}".</div>`;
-            return;
-        }
-
-        const matches = snap.docs.map(d=>d.data()).slice(0,20);
-
-        const rows = await Promise.all(matches.map(async u=>{
-            let books = 0;
-            try{
-                const rSnap = await getDocs(query(collection(db,'readingLog'), where('uid','==',u.uid)));
-                books = rSnap.size;
-            }catch{ /* leave at 0 */ }
-
-            const initial = (u.username||'?').trim().charAt(0).toUpperCase() || '?';
-            const bioText = u.bio ? escapeHtml(u.bio) : '<span class="account-bio-placeholder">No bio yet.</span>';
-
-            return `
-                <div class="search-result-row">
-                    <div class="search-result-avatar">${initial}</div>
-                    <div class="search-result-info">
-                        <div class="search-result-name">${escapeHtml(u.username||'Reader')}</div>
-                        <div class="search-result-bio">${bioText}</div>
-                    </div>
-                    <div class="search-result-books"><div class="num">${books}</div><div class="lbl">books</div></div>
-                </div>`;
-        }));
-
-        resultsEl.innerHTML = rows.join('');
-    }catch(err){
-        resultsEl.innerHTML = `<div class="user-search-note" style="color:var(--danger);">Search failed. Please try again.</div>`;
-    }
-}
+/* Reader search now lives entirely on chat.html (see the "Searching for
+   any reader?" button above), alongside friend requests and messaging. */
 
 /* ── Modal open/close plumbing ── */
 function openModal(id){ $(id).classList.add('open'); }

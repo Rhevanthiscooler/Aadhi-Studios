@@ -432,7 +432,7 @@
 
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserLocalPersistence }
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -458,6 +458,20 @@ const db   = getFirestore(app);
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
 
 const OWNER_EMAIL = 'indradamo@gmail.com';
+
+// Already signed in? Skip the sign-in form entirely and go straight to the
+// library — that's the whole point of staying signed in across visits.
+// The one exception is maintenance mode: a non-owner who's signed in still
+// needs to see the maintenance banner here, not get bounced past it.
+onAuthStateChanged(auth, async user=>{
+    if(!user) return; // no session — show the sign-in form as normal
+    try{
+        const snap = await getDoc(doc(db,'config','site'));
+        const maintenanceOn = snap.exists() && snap.data().maintenance === true;
+        if(maintenanceOn && user.email !== OWNER_EMAIL) return; // let checkMaintenance() show the banner
+    }catch{ /* if this check fails, don't block a legitimate signed-in visitor */ }
+    window.location.href = '/Aadhi-Studios/main.html';
+});
 
 /* MAINTENANCE */
 async function checkMaintenance(){

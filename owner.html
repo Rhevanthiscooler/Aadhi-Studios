@@ -154,6 +154,32 @@
     .status-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; }
     .status-badge.active { background:#d1fae5; color:var(--success); }
     .status-badge.banned { background:#fff3cd; color:var(--warn); }
+
+    /* ── User cards (replaces the table — max 6 across, like the friends strip) ── */
+    .users-grid-note { font-size:12.5px; color:var(--ink-4); padding:2px 2px 14px; }
+    .users-grid { display:flex; flex-wrap:wrap; gap:14px; }
+    .user-card {
+        width:150px; flex:0 0 150px; display:flex; flex-direction:column; align-items:center;
+        text-align:center; gap:7px; padding:18px 12px; border:1px solid var(--surface-3);
+        border-radius:14px; background:var(--surface-2); animation:rowRise .3s ease backwards;
+    }
+    .user-card-avatar {
+        width:52px; height:52px; border-radius:50%; overflow:hidden; flex-shrink:0;
+        background:linear-gradient(135deg,var(--accent),var(--accent-h)); color:#fff;
+        font-family:'Playfair Display',serif; font-size:19px; font-weight:700;
+        display:flex; align-items:center; justify-content:center;
+    }
+    .user-card-avatar img { width:100%; height:100%; object-fit:cover; }
+    .user-card-username { font-size:13.5px; font-weight:700; color:var(--ink); width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-card-email { font-size:11.5px; color:var(--ink-3); width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-card-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
+    .users-search-bar { margin-top:18px; padding-top:16px; border-top:1px solid var(--surface-3); display:flex; gap:8px; }
+    .users-search-bar input {
+        flex:1; padding:11px 14px; border-radius:9px; border:1px solid var(--surface-3);
+        background:var(--surface); color:var(--ink); font-family:'DM Sans',sans-serif; font-size:14px;
+    }
+    .users-search-bar input:focus { outline:none; border-color:var(--accent); }
+
     .action-btn { font-size:11px; font-weight:600; padding:5px 12px; border:none; border-radius:6px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .15s,transform .12s ease; margin-right:4px; }
     .action-btn:hover { opacity:.8; transform:translateY(-1px); }
     .action-btn:active { transform:scale(.94); }
@@ -372,18 +398,10 @@
                     <button class="action-btn delete" id="resetTableBtn" style="background:#7a0d0d;">Reset table (delete all)</button>
                 </span>
             </div>
-            <div class="users-table-wrap">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>DOB</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody"></tbody>
-                </table>
+            <div class="users-grid-note" id="usersGridNote"></div>
+            <div class="users-grid" id="usersGrid"></div>
+            <div class="users-search-bar">
+                <input type="text" id="usersSearchInput" placeholder="Search by username or email…">
             </div>
         </div>
     </div>
@@ -733,39 +751,66 @@ function renderMostViewed(){
     }).join('');
 }
 
-/* ── USERS TABLE ── */
-function renderUsersTable(){
-    const tbody = $('usersTableBody');
+/* ── USERS GRID (cards, max 6 across, with a search bar to find anyone else) ── */
+let usersSearchTerm = '';
+function userCardAvatar(photoURL, name){
+    const initial = (name||'?').trim().charAt(0).toUpperCase() || '?';
+    return photoURL ? `<img src="${escapeHtml(photoURL)}" alt="">` : initial;
+}
+function renderUsersTable(){ renderUsersGrid(); }
+function renderUsersGrid(){
+    const grid = $('usersGrid'), note = $('usersGridNote');
     const visibleUsers = users.filter(u => !u.deleted);
     $('usersCount').textContent = visibleUsers.length + ' accounts';
-    if(visibleUsers.length === 0){ tbody.innerHTML = `<tr class="empty-row"><td colspan="4">No registered users yet.</td></tr>`; return; }
-    tbody.innerHTML = visibleUsers.map((user,i)=>{
+
+    if(visibleUsers.length === 0){
+        note.textContent = '';
+        grid.innerHTML = `<div class="users-grid-note">No registered users yet.</div>`;
+        return;
+    }
+
+    const term = usersSearchTerm.trim().toLowerCase();
+    const matches = term
+        ? visibleUsers.filter(u => (u.username||'').toLowerCase().includes(term) || (u.email||'').toLowerCase().includes(term))
+        : visibleUsers;
+
+    if(matches.length === 0){
+        note.textContent = '';
+        grid.innerHTML = `<div class="users-grid-note">No accounts match "${escapeHtml(usersSearchTerm)}".</div>`;
+        return;
+    }
+
+    const shown = term ? matches : matches.slice(0,6);
+    note.textContent = (!term && visibleUsers.length > 6)
+        ? `Showing 6 of ${visibleUsers.length} accounts — search below to find a specific one.`
+        : (term ? `${matches.length} match${matches.length===1?'':'es'} for "${usersSearchTerm}"` : '');
+
+    grid.innerHTML = shown.map((user,i)=>{
         const deleted = user.deleted;
         const banned  = !deleted && user.banUntil && user.banUntil > Date.now();
         let badge;
-        if(deleted){
-            badge = `<span class="status-badge banned" style="background:#fee2e2;color:#d93025;"><i class="fas fa-trash"></i> Deleted</span>`;
-        } else if(banned){
+        if(banned){
             const daysLeft = Math.ceil((user.banUntil - Date.now()) / 86400000);
             const isPerm   = daysLeft > 3650;
             const until    = isPerm ? 'Permanent' : `until ${new Date(user.banUntil).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
             badge = `<span class="status-badge banned"><i class="fas fa-ban"></i> Banned</span>
-                     <div style="font-size:11px;color:var(--ink-3);margin-top:3px;">${until}${user.banReason?' · '+escapeHtml(user.banReason):''}</div>`;
+                     <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px;">${until}</div>`;
         } else {
             badge = `<span class="status-badge active"><i class="fas fa-circle"></i> Active</span>`;
         }
-        const banBtn = deleted ? '' : banned
-            ? `<button class="action-btn unban" onclick="window._unbanUser('${user.id}')">Unban</button>`
-            : `<button class="action-btn ban"   onclick="window._banUser('${user.id}')">Ban</button>`;
-        const deleteBtn = deleted ? '' : `<button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button>`;
-        return `<tr style="animation-delay:${(i*0.03).toFixed(2)}s;${deleted?'opacity:.5;':''}">
-            <td>${escapeHtml(user.email||'—')}</td>
-            <td>${user.dob||'—'}</td>
-            <td>${badge}</td>
-            <td>${banBtn}${deleteBtn}</td>
-        </tr>`;
+        const banBtn = `<button class="action-btn ${banned?'unban':'ban'}" onclick="window.${banned?'_unbanUser':'_banUser'}('${user.id}')">${banned?'Unban':'Ban'}</button>`;
+        const deleteBtn = `<button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button>`;
+        return `
+            <div class="user-card" style="animation-delay:${(i*0.03).toFixed(2)}s;">
+                <div class="user-card-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
+                <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}</div>
+                <div class="user-card-email">${escapeHtml(user.email||'—')}</div>
+                <div>${badge}</div>
+                <div class="user-card-actions">${banBtn}${deleteBtn}</div>
+            </div>`;
     }).join('');
 }
+$('usersSearchInput').addEventListener('input', e=>{ usersSearchTerm = e.target.value; renderUsersGrid(); });
 
 /* ── ADS (oversight — enable/disable/delete only; creating a new ad still
    happens from the regular Admin panel's Ads tab) ── */

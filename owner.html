@@ -366,16 +366,16 @@
         <div class="card">
             <div class="card-head">
                 <span class="card-head-title"><i class="fas fa-users"></i> All Users</span>
-                <span style="display:flex;align-items:center;gap:12px;">
+                <span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <span style="font-size:12px;color:var(--ink-4);" id="usersCount">Loading…</span>
                     <button class="action-btn delete" id="deleteGmailBtn">Delete all Gmail accounts</button>
+                    <button class="action-btn delete" id="resetTableBtn" style="background:#7a0d0d;">Reset table (delete all)</button>
                 </span>
             </div>
             <div class="users-table-wrap">
                 <table class="users-table">
                     <thead>
                         <tr>
-                            <th>Username</th>
                             <th>Email</th>
                             <th>DOB</th>
                             <th>Status</th>
@@ -738,7 +738,7 @@ function renderUsersTable(){
     const tbody = $('usersTableBody');
     const visibleUsers = users.filter(u => !u.deleted);
     $('usersCount').textContent = visibleUsers.length + ' accounts';
-    if(visibleUsers.length === 0){ tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No registered users yet.</td></tr>`; return; }
+    if(visibleUsers.length === 0){ tbody.innerHTML = `<tr class="empty-row"><td colspan="4">No registered users yet.</td></tr>`; return; }
     tbody.innerHTML = visibleUsers.map((user,i)=>{
         const deleted = user.deleted;
         const banned  = !deleted && user.banUntil && user.banUntil > Date.now();
@@ -759,7 +759,6 @@ function renderUsersTable(){
             : `<button class="action-btn ban"   onclick="window._banUser('${user.id}')">Ban</button>`;
         const deleteBtn = deleted ? '' : `<button class="action-btn delete" onclick="window._deleteUser('${user.id}')">Delete</button>`;
         return `<tr style="animation-delay:${(i*0.03).toFixed(2)}s;${deleted?'opacity:.5;':''}">
-            <td><strong>${escapeHtml(user.username||'Anonymous')}</strong></td>
             <td>${escapeHtml(user.email||'—')}</td>
             <td>${user.dob||'—'}</td>
             <td>${badge}</td>
@@ -970,6 +969,25 @@ $('deleteGmailBtn').addEventListener('click', async ()=>{
     }
     btn.disabled = false; btn.textContent = 'Delete all Gmail accounts';
     toast(fail===0 ? `Deleted ${ok} Gmail account${ok===1?'':'s'}.` : `Deleted ${ok}, failed on ${fail}.`);
+});
+
+/* Full wipe — meant to run right after you reset Firebase Authentication,
+   so the Firestore 'users' table matches the now-empty Auth user list.
+   Type-to-confirm because there's no filter here: every row goes. */
+$('resetTableBtn').addEventListener('click', async ()=>{
+    if(users.length === 0){ toast('The users table is already empty.'); return; }
+    const typed = prompt(`This permanently deletes ALL ${users.length} users from the table — no filter, everyone.\n\nType RESET to confirm:`);
+    if(typed !== 'RESET'){ toast('Reset cancelled.'); return; }
+
+    const btn = $('resetTableBtn');
+    btn.disabled = true; btn.textContent = 'Resetting…';
+    let ok=0, fail=0;
+    for(const u of users){
+        try{ await deleteDoc(doc(db,'users',u.id)); ok++; }
+        catch{ fail++; }
+    }
+    btn.disabled = false; btn.textContent = 'Reset table (delete all)';
+    toast(fail===0 ? `Table reset — deleted ${ok} users.` : `Deleted ${ok}, failed on ${fail}.`);
 });
 
 /* ── LOG LOGIN ATTEMPT (called from index.html via Firestore) ──

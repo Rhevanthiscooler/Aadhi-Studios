@@ -111,18 +111,34 @@
     .toggle-switch input:checked + .toggle-slider { background:var(--danger); }
     .toggle-switch input:checked + .toggle-slider::before { transform:translateX(24px); }
 
-    /* ── LOGIN ATTEMPTS TABLE ── */
-    .attempts-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .attempts-table { width:100%; min-width:560px; border-collapse:collapse; font-size:13px; }
-    .attempts-table th { text-align:left; padding:12px 16px; font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-4); border-bottom:1px solid var(--surface-3); white-space:nowrap; }
-    .attempts-table td { padding:13px 16px; border-bottom:1px solid var(--surface-3); color:var(--ink-2); }
-    .attempts-table tr:last-child td { border-bottom:none; }
-    .attempts-table tr:hover td { background:var(--surface-2); }
-    .attempts-table tbody tr { animation:rowRise .3s ease backwards; }
-    .attempt-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; }
+    /* ── LOGIN ATTEMPTS ── */
+    .attempt-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; flex-shrink:0; }
     .attempt-badge.success { background:#d1fae5; color:var(--success); }
     .attempt-badge.fail { background:#fee2e2; color:var(--danger); }
     .attempt-badge.banned { background:#fff3cd; color:var(--warn); }
+
+    /* ── Login attempts — vertical list, reads top-to-bottom on a phone
+       instead of needing a horizontal scroll like the old table did ── */
+    /* ── Login history drill-down ── */
+    .login-detail-avatar {
+        width:56px; height:56px; border-radius:50%; overflow:hidden; flex-shrink:0;
+        background:linear-gradient(135deg,var(--accent-2,var(--owner)),var(--owner)); color:#fff;
+        font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700;
+        display:flex; align-items:center; justify-content:center;
+    }
+    .login-detail-avatar img { width:100%; height:100%; object-fit:cover; }
+    .login-detail-name { font-size:16px; font-weight:700; color:var(--ink); }
+    .login-detail-email { font-size:12.5px; color:var(--ink-3); margin-top:2px; }
+    .login-day-chip {
+        display:inline-flex; align-items:center; gap:6px; padding:6px 12px; margin:0 6px 6px 0;
+        border-radius:20px; border:1px solid var(--surface-3); background:var(--surface-2);
+        font-size:12px; color:var(--ink-2); cursor:pointer; transition:background .12s,border-color .12s;
+    }
+    .login-day-chip:hover { background:var(--surface-3); }
+    .login-day-chip.active { background:var(--owner); border-color:var(--owner); color:#fff; }
+    .login-day-count { font-size:22px; font-weight:700; color:var(--ink); font-family:'Cormorant Garamond',serif; }
+    .login-result-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-top:1px solid var(--surface-3); }
+    .login-result-time { font-size:13px; color:var(--ink-2); }
 
     /* ── CHART ── */
     .chart-wrap { padding:24px; position:relative; height:280px; }
@@ -352,25 +368,33 @@
 
     <!-- ── LOGIN ATTEMPTS ── -->
     <div class="owner-panel" id="tabLogins">
-        <div class="card">
+        <div class="card" id="loginsGridCard">
             <div class="card-head">
                 <span class="card-head-title"><i class="fas fa-shield-alt"></i> Login Attempts</span>
                 <span style="font-size:12px;color:var(--ink-4);" id="attemptsCount">Loading…</span>
             </div>
-            <div class="attempts-table-wrap">
-                <table class="attempts-table">
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Result</th>
-                            <th>Time</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody id="attemptsTableBody">
-                        <tr><td colspan="4" style="text-align:center;color:var(--ink-4);padding:28px;font-style:italic;">Loading…</td></tr>
-                    </tbody>
-                </table>
+            <div class="users-grid-note" id="loginsGridNote"></div>
+            <div class="users-grid" id="loginsGrid"></div>
+            <div class="users-search-bar">
+                <input type="text" id="loginsSearchInput" placeholder="Search by username or email…">
+            </div>
+        </div>
+
+        <div class="card" id="loginDetailCard" style="display:none;">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-shield-alt"></i> Login History</span>
+                <button class="action-btn" id="loginDetailBackBtn" style="background:var(--surface-3);color:var(--ink-2);">← Back to accounts</button>
+            </div>
+            <div style="padding:22px 24px;">
+                <div id="loginDetailHeader" style="display:flex;align-items:center;gap:14px;margin-bottom:22px;"></div>
+
+                <div class="modal-field" style="max-width:220px;">
+                    <label>Pick a date</label>
+                    <input type="date" id="loginDetailDate">
+                </div>
+
+                <div id="loginDetailChips" style="margin-top:14px;"></div>
+                <div id="loginDetailResults" style="margin-top:20px;"></div>
             </div>
         </div>
     </div>
@@ -623,6 +647,7 @@ function refreshAll(){
     renderMostViewed();
     renderUsersTable();
     renderCommentsTab();
+    renderLoginAttempts();
 }
 
 /* ── STATS ── */
@@ -697,27 +722,140 @@ function renderUserChart(){
 }
 
 /* ── LOGIN ATTEMPTS ── */
+/* ── LOGIN ATTEMPTS: pick an account, then a date, then see that day's logins ── */
+let loginsSearchTerm = '';
+let currentLoginUser = null;
+
+function dayKey(ts){ return ts ? new Date(ts).toLocaleDateString('en-CA') : null; } // YYYY-MM-DD, matches <input type="date">
+
 function renderLoginAttempts(){
-    const tbody = $('attemptsTableBody');
+    // Only re-render the grid if we're not already looking at someone's detail view
+    if($('loginDetailCard').style.display !== 'none') return;
+    renderLoginAccountsGrid();
+}
+
+function renderLoginAccountsGrid(){
+    const grid = $('loginsGrid'), note = $('loginsGridNote');
+    const accounts = users.filter(u => !u.deleted);
     $('attemptsCount').textContent = loginAttempts.length + ' records';
-    if(loginAttempts.length === 0){
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--ink-4);padding:28px;font-style:italic;">No login attempts recorded yet.</td></tr>`;
+
+    if(accounts.length === 0){
+        note.textContent = '';
+        grid.innerHTML = `<div class="users-grid-note">No registered accounts yet.</div>`;
         return;
     }
-    tbody.innerHTML = loginAttempts.slice(0,200).map((a,i)=>{
-        let badge;
-        if(a.result === 'success') badge = `<span class="attempt-badge success"><i class="fas fa-check"></i> Success</span>`;
-        else if(a.result === 'banned') badge = `<span class="attempt-badge banned"><i class="fas fa-ban"></i> Banned</span>`;
-        else badge = `<span class="attempt-badge fail"><i class="fas fa-times"></i> Failed</span>`;
 
-        const time = a.timestamp ? new Date(a.timestamp).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
-        return `<tr style="animation-delay:${(i*0.02).toFixed(2)}s">
-            <td>${escapeHtml(a.email||'—')}</td>
-            <td>${badge}</td>
-            <td style="color:var(--ink-3);font-size:12px;">${time}</td>
-            <td style="color:var(--ink-4);font-size:12px;">${escapeHtml(a.detail||'')}</td>
-        </tr>`;
-    }).join('');
+    const term = loginsSearchTerm.trim().toLowerCase();
+    const matches = term
+        ? accounts.filter(u => (u.username||'').toLowerCase().includes(term) || (u.email||'').toLowerCase().includes(term))
+        : accounts;
+
+    if(matches.length === 0){
+        note.textContent = '';
+        grid.innerHTML = `<div class="users-grid-note">No accounts match "${escapeHtml(loginsSearchTerm)}".</div>`;
+        return;
+    }
+
+    const shown = term ? matches : matches.slice(0,6);
+    note.textContent = (!term && accounts.length > 6)
+        ? `Showing 6 of ${accounts.length} accounts — search below to find a specific one. Tap an account to see its login history.`
+        : (term ? `${matches.length} match${matches.length===1?'':'es'} for "${loginsSearchTerm}"` : 'Tap an account to see its login history.');
+
+    grid.innerHTML = shown.map((user,i)=>`
+        <div class="user-card" style="animation-delay:${(i*0.03).toFixed(2)}s;cursor:pointer;" onclick="window._openLoginDetail('${user.id}')">
+            <div class="user-card-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
+            <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}</div>
+            <div class="user-card-email">${escapeHtml(user.email||'—')}</div>
+        </div>`
+    ).join('');
+}
+$('loginsSearchInput').addEventListener('input', e=>{ loginsSearchTerm = e.target.value; renderLoginAccountsGrid(); });
+
+window._openLoginDetail = function(userId){
+    const user = users.find(u=>u.id===userId);
+    if(!user) return;
+    currentLoginUser = user;
+
+    $('loginsGridCard').style.display = 'none';
+    $('loginDetailCard').style.display = 'block';
+
+    $('loginDetailHeader').innerHTML = `
+        <div class="login-detail-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
+        <div>
+            <div class="login-detail-name">${escapeHtml(user.username||'Anonymous')}</div>
+            <div class="login-detail-email">${escapeHtml(user.email||'—')}</div>
+        </div>`;
+
+    const myAttempts = loginAttempts.filter(a => (a.email||'').toLowerCase().trim() === (user.email||'').toLowerCase().trim());
+
+    // Group by day so we can show quick-pick chips for the days that actually have activity
+    const byDay = {};
+    myAttempts.forEach(a=>{
+        const k = dayKey(a.timestamp);
+        if(!k) return;
+        (byDay[k] = byDay[k] || []).push(a);
+    });
+    const sortedDays = Object.keys(byDay).sort((a,b)=> b.localeCompare(a));
+
+    const chipsEl = $('loginDetailChips');
+    if(sortedDays.length){
+        chipsEl.innerHTML = sortedDays.slice(0,8).map(d=>{
+            const label = new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+            return `<span class="login-day-chip" data-day="${d}">${label} · ${byDay[d].length}</span>`;
+        }).join('');
+        chipsEl.querySelectorAll('.login-day-chip').forEach(chip=>{
+            chip.addEventListener('click', ()=>{
+                $('loginDetailDate').value = chip.dataset.day;
+                renderLoginDayResults(chip.dataset.day);
+            });
+        });
+    } else {
+        chipsEl.innerHTML = `<div style="font-size:12.5px;color:var(--ink-4);">No login attempts recorded for this account yet.</div>`;
+    }
+
+    const defaultDay = sortedDays[0] || dayKey(Date.now());
+    $('loginDetailDate').value = defaultDay;
+    renderLoginDayResults(defaultDay);
+};
+
+$('loginDetailDate').addEventListener('change', e=> renderLoginDayResults(e.target.value));
+
+$('loginDetailBackBtn').addEventListener('click', ()=>{
+    currentLoginUser = null;
+    $('loginDetailCard').style.display = 'none';
+    $('loginsGridCard').style.display = 'block';
+    renderLoginAccountsGrid();
+});
+
+function renderLoginDayResults(dateStr){
+    const resultsEl = $('loginDetailResults'), chipsEl = $('loginDetailChips');
+    chipsEl.querySelectorAll('.login-day-chip').forEach(c=> c.classList.toggle('active', c.dataset.day === dateStr));
+
+    if(!currentLoginUser || !dateStr){ resultsEl.innerHTML = ''; return; }
+    const dayAttempts = loginAttempts
+        .filter(a => (a.email||'').toLowerCase().trim() === (currentLoginUser.email||'').toLowerCase().trim() && dayKey(a.timestamp) === dateStr)
+        .sort((a,b)=> b.timestamp - a.timestamp);
+
+    const prettyDate = new Date(dateStr+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    if(dayAttempts.length === 0){
+        resultsEl.innerHTML = `
+            <div class="login-day-count">0</div>
+            <div style="font-size:12.5px;color:var(--ink-4);margin-top:2px;">login attempts on ${prettyDate}</div>`;
+        return;
+    }
+
+    resultsEl.innerHTML = `
+        <div class="login-day-count">${dayAttempts.length}</div>
+        <div style="font-size:12.5px;color:var(--ink-4);margin-top:2px;margin-bottom:6px;">login attempt${dayAttempts.length===1?'':'s'} on ${prettyDate}</div>
+        ${dayAttempts.map(a=>{
+            let badge;
+            if(a.result === 'success') badge = `<span class="attempt-badge success"><i class="fas fa-check"></i> Success</span>`;
+            else if(a.result === 'banned') badge = `<span class="attempt-badge banned"><i class="fas fa-ban"></i> Banned</span>`;
+            else badge = `<span class="attempt-badge fail"><i class="fas fa-times"></i> Failed</span>`;
+            const time = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+            return `<div class="login-result-row"><span class="login-result-time">${time}${a.detail?` · ${escapeHtml(a.detail)}`:''}</span>${badge}</div>`;
+        }).join('')}`;
 }
 
 /* ── MOST VIEWED ── */

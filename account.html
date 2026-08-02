@@ -222,6 +222,16 @@
     .friend-chip-name{font-size:11.5px;color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
     .friends-empty-note{color:var(--ink-3);font-size:13.5px;padding:6px 0 2px;}
 
+    /* ── Favourites ── */
+    .fav-block{margin-top:22px;padding-top:18px;border-top:1px solid var(--surface-3);}
+    .fav-label{font-size:12.5px;color:var(--ink-3);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px;}
+    .fav-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--surface-3);cursor:pointer;}
+    .fav-row:first-of-type{border-top:none;}
+    .fav-row:hover .fav-title{color:var(--accent);}
+    .fav-row i{color:#e0245e;font-size:14px;flex-shrink:0;}
+    .fav-title{font-size:13.5px;font-weight:600;color:var(--ink);transition:color .12s;}
+    .fav-desc{font-size:12px;color:var(--ink-3);margin-top:1px;}
+
     /* ── Find readers CTA ── */
     .find-readers-btn{
         width:100%;margin-top:20px;padding:15px;border-radius:14px;border:none;
@@ -398,7 +408,7 @@ onAuthStateChanged(auth, async user => {
     $('findReadersBtn').style.display = 'flex';
 
     // 1) Basic profile from the 'users' collection
-    let username='Reader', dob='—', createdAt=null, bio='', photoURL='', friends=[];
+    let username='Reader', dob='—', createdAt=null, bio='', photoURL='', friends=[], favorites=[];
     try{
         const snap = await getDocs(query(collection(db,'users'), where('uid','==',user.uid)));
         if(!snap.empty){
@@ -409,6 +419,7 @@ onAuthStateChanged(auth, async user => {
             bio = d.bio || '';
             photoURL = d.photoURL || '';
             friends = d.friends || [];
+            favorites = d.favorites || [];
             myUserDocRef = snap.docs[0].ref;
         }
     }catch{ /* keep defaults */ }
@@ -457,10 +468,16 @@ onAuthStateChanged(auth, async user => {
             <div class="account-bio-text" id="bioText">${bio ? escapeHtml(bio) : '<span class="account-bio-placeholder">No bio yet — tell other readers a bit about yourself.</span>'}</div>
         </div>
 
+        <div class="fav-block">
+            <div class="fav-label"><i class="fas fa-heart" style="color:#e0245e;margin-right:5px;"></i>Favourites <span style="text-transform:none;font-weight:400;color:var(--ink-4);">— visible on your public profile</span></div>
+            <div id="favList"><div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div></div>
+        </div>
+
         <button class="account-signout-btn" id="signOutBtn"><i class="fas fa-sign-out-alt"></i> Sign out</button>
     `;
 
     $('bioEditBtn').addEventListener('click', () => renderBioEditMode(bio, myUserDocRef));
+    loadFavoriteStories(favorites, 'favList');
 
     $('signOutBtn').addEventListener('click', () => {
         signOut(auth).then(() => {
@@ -519,6 +536,7 @@ async function renderOtherProfile(targetUid){
 
     const targetBlocked = target.blocked || [];
     const targetFriends = target.friends || [];
+    const targetFavorites = target.favorites || [];
     const theyBlockedMe = targetBlocked.includes(myUid);
     const iBlockedThem  = myBlocked.includes(targetUid);
     const areFriends    = myFriends.includes(targetUid);
@@ -558,8 +576,15 @@ async function renderOtherProfile(targetUid){
             <div class="account-bio-text">${bio ? escapeHtml(bio) : '<span class="account-bio-placeholder">No bio yet.</span>'}</div>
         </div>
 
+        <div class="fav-block">
+            <div class="fav-label"><i class="fas fa-heart" style="color:#e0245e;margin-right:5px;"></i>Favourites</div>
+            <div id="favList"><div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div></div>
+        </div>
+
         <div class="profile-actions" id="profileActions"></div>
     `;
+
+    loadFavoriteStories(targetFavorites, 'favList');
 
     function renderActions(html){ $('profileActions').innerHTML = html; }
 
@@ -774,6 +799,39 @@ async function loadFriends(friendUids){
         });
     }catch{
         stripEl.innerHTML = `<div class="friends-empty-note">Could not load friends.</div>`;
+    }
+}
+
+/* ══ FAVOURITES — shows the reader's hearted books; public on every profile ══ */
+async function loadFavoriteStories(favoriteIds, containerId){
+    const el = $(containerId);
+    if(!favoriteIds || !favoriteIds.length){
+        el.innerHTML = `<div class="friends-empty-note">No favourites yet.</div>`;
+        return;
+    }
+    el.innerHTML = `<div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div>`;
+    try{
+        const allStories = await getDocs(collection(db,'stories'));
+        const favStories = allStories.docs
+            .map(d=>({id:d.id,...d.data()}))
+            .filter(s=>favoriteIds.includes(s.id));
+        if(favStories.length===0){
+            el.innerHTML = `<div class="friends-empty-note">No favourites yet.</div>`;
+            return;
+        }
+        el.innerHTML = favStories.map(s=>`
+            <div class="fav-row" data-id="${escapeHtml(s.id)}">
+                <i class="fas fa-heart"></i>
+                <div>
+                    <div class="fav-title">${escapeHtml(s.name||'Untitled')}</div>
+                    <div class="fav-desc">${escapeHtml(s.desc||'No synopsis')}</div>
+                </div>
+            </div>`).join('');
+        el.querySelectorAll('.fav-row').forEach(row=>{
+            row.addEventListener('click', ()=>{ window.location.href = `main.html?openStory=${encodeURIComponent(row.dataset.id)}`; });
+        });
+    }catch{
+        el.innerHTML = `<div class="friends-empty-note">Could not load favourites.</div>`;
     }
 }
 

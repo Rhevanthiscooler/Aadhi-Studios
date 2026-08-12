@@ -291,6 +291,7 @@
         <div id="siStep1">
             <div class="field"><label>Username</label><input type="text" id="siUsername" placeholder="Enter your username" autocomplete="username"></div>
             <button class="submit-btn" id="siNextBtn">Continue</button>
+            <button class="forgot-link" id="guestModeLink" style="display:block;width:100%;text-align:center;margin-top:14px;">Continue as guest</button>
         </div>
 
         <!-- Step 2: Password -->
@@ -523,9 +524,41 @@ async function checkMaintenance(){
 }
 checkMaintenance();
 
+/* ── IP BAN — fetch the visitor's public IP once, block the sign-in page
+   entirely if it's on the owner's ban list. This is a soft deterrent, not
+   a hard security boundary: VPNs, mobile data, or a different network all
+   bypass it instantly, same as any client-side IP check would. ── */
+let visitorIP = null;
+async function getVisitorIP(){
+    if(visitorIP) return visitorIP;
+    try{
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        visitorIP = data.ip || null;
+    }catch{ visitorIP = null; }
+    return visitorIP;
+}
+async function checkIPBan(){
+    try{
+        const ip = await getVisitorIP();
+        if(!ip) return;
+        const snap = await getDoc(doc(db,'bannedIPs',ip));
+        if(snap.exists()){
+            const card = document.getElementById('card');
+            if(card) card.style.display = 'none';
+            const banner = document.createElement('div');
+            banner.style.cssText = 'max-width:420px;margin:80px auto;padding:28px;text-align:center;font-family:Inter,sans-serif;color:#333;';
+            banner.innerHTML = `<div style="font-size:32px;margin-bottom:14px;">🚫</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">Access restricted</div><div style="font-size:14px;color:#666;">Your network has been restricted from accessing this site.</div>`;
+            document.body.appendChild(banner);
+        }
+    }catch{ /* if the check fails, don't block a legitimate visitor */ }
+}
+checkIPBan();
+
 /* LOG ATTEMPT */
 async function logAttempt(email, result, detail=''){
-    try{ await addDoc(collection(db,'loginAttempts'),{ email, result, detail, timestamp:Date.now() }); }catch(e){}
+    const ip = await getVisitorIP();
+    try{ await addDoc(collection(db,'loginAttempts'),{ email, result, detail, ip: ip||'unknown', timestamp:Date.now() }); }catch(e){}
 }
 
 const $ = id => document.getElementById(id);
@@ -614,6 +647,7 @@ function showSiStep(n, dir='forward'){
 }
 
 $('siNextBtn').addEventListener('click', handleUsernameStep);
+$('guestModeLink').addEventListener('click', ()=>{ window.location.href='/Aadhi-Studios/main.html'; });
 $('siUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') handleUsernameStep(); });
 
 async function handleUsernameStep(){

@@ -225,6 +225,31 @@
     .friend-chip-name{font-size:11.5px;color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
     .friends-empty-note{color:var(--ink-3);font-size:13.5px;padding:6px 0 2px;}
 
+    /* ── Switch account ── */
+    .switch-account-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-radius:10px;cursor:pointer;transition:background .12s;}
+    .switch-account-row:hover{background:var(--surface-2);}
+    .switch-account-row.current{cursor:default;}
+    .switch-account-row.current:hover{background:none;}
+    .switch-account-avatar{
+        width:38px;height:38px;flex-shrink:0;border-radius:50%;overflow:hidden;
+        background:linear-gradient(135deg,var(--accent),var(--accent-h));color:#fff;
+        font-family:'Playfair Display',serif;font-size:15px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;
+    }
+    .switch-account-avatar img{width:100%;height:100%;object-fit:cover;}
+    .switch-account-info{flex:1;min-width:0;}
+    .switch-account-name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .switch-account-email{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .switch-account-badge{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:3px 9px;border-radius:20px;flex-shrink:0;}
+    .switch-account-remove{background:none;border:none;color:var(--ink-4);font-size:13px;cursor:pointer;padding:6px;flex-shrink:0;}
+    .switch-account-remove:hover{color:var(--danger);}
+    .switch-account-add-btn{
+        width:100%;margin-top:8px;padding:12px;border-radius:10px;border:1px dashed var(--surface-3);
+        background:none;color:var(--accent);font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .12s;
+    }
+    .switch-account-add-btn:hover{background:var(--accent-bg);}
+
     /* ── Favourites ── */
     .fav-block{margin-top:22px;padding-top:18px;border-top:1px solid var(--surface-3);}
     .fav-label{font-size:12.5px;color:var(--ink-3);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px;}
@@ -295,6 +320,14 @@
         </div>
     </div>
 
+    <div class="account-card" id="switchAccountCard" style="margin-top:20px;display:none;">
+        <div class="friends-header">
+            <h3><i class="fas fa-right-left" style="color:var(--accent);margin-right:6px;"></i>Switch account</h3>
+        </div>
+        <div id="switchAccountList"></div>
+        <button class="switch-account-add-btn" id="addAccountBtn"><i class="fas fa-plus"></i> Add another account</button>
+    </div>
+
     <button class="find-readers-btn" id="findReadersBtn"><i class="fas fa-search"></i> Searching for any reader?</button>
 </div>
 
@@ -343,17 +376,31 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/fireba
 import { getAuth, signOut, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, verifyBeforeUpdateEmail, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore, collection, doc, query, where, getDocs, getDoc, updateDoc, setDoc, deleteDoc, addDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-const app  = initializeApp({
+/* ── MULTI-ACCOUNT SWITCHING — see index.html for the full explanation.
+   This is the page where people actually manage/switch accounts. ── */
+const ACTIVE_SLOT_KEY = 'aadhi_active_slot';
+const KNOWN_ACCOUNTS_KEY = 'aadhi_known_accounts';
+const FIREBASE_CONFIG = {
     apiKey:"AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
     authDomain:"aadhi-studios.firebaseapp.com",
     projectId:"aadhi-studios",
     storageBucket:"aadhi-studios.firebasestorage.app",
     messagingSenderId:"1052163368305",
     appId:"1:1052163368305:web:c8c51c39c271659caa42d0"
-});
+};
+const activeSlot = localStorage.getItem(ACTIVE_SLOT_KEY) || '[DEFAULT]';
+const app  = activeSlot === '[DEFAULT]' ? initializeApp(FIREBASE_CONFIG) : initializeApp(FIREBASE_CONFIG, activeSlot);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
 const db   = getFirestore(app);
+
+function getKnownAccounts(){
+    try{ return JSON.parse(localStorage.getItem(KNOWN_ACCOUNTS_KEY) || '[]'); }
+    catch{ return []; }
+}
+function saveKnownAccounts(list){
+    try{ localStorage.setItem(KNOWN_ACCOUNTS_KEY, JSON.stringify(list)); }catch{}
+}
 
 const $ = id => document.getElementById(id);
 
@@ -391,6 +438,7 @@ onAuthStateChanged(auth, async user => {
     $('requestsCard').style.display = 'none';
     $('friendsCard').style.display = 'none';
     $('findReadersBtn').style.display = 'none';
+    $('switchAccountCard').style.display = 'none';
 
     if(!user){
         card.innerHTML = `
@@ -427,6 +475,19 @@ onAuthStateChanged(auth, async user => {
         }
     }catch{ /* keep defaults */ }
     myUsername = username;
+
+    // Make sure this signed-in account shows up in the switcher even if it
+    // was signed in before this feature existed, or was never explicitly
+    // added via "Add another account".
+    {
+        const known = getKnownAccounts();
+        const idx = known.findIndex(a=>a.uid===user.uid);
+        const entry = { uid:user.uid, email:user.email||'', username, slot:activeSlot };
+        if(idx===-1) known.push(entry); else known[idx]=entry;
+        saveKnownAccounts(known);
+        localStorage.setItem(ACTIVE_SLOT_KEY, activeSlot);
+    }
+    renderSwitchAccount(photoURL);
 
     // 2) Comments posted (by username)
     let commentCount = 0;
@@ -727,6 +788,60 @@ async function handleAvatarFile(file){
 }
 
 /* ══ FRIEND REQUESTS — pending incoming requests, accept/decline ══ */
+/* ══ SWITCH ACCOUNT — each account has its own signed-in Firebase "slot",
+   so switching to one you've already added doesn't ask for a password
+   again; it's already sitting there signed in, we just start using it. ══ */
+function renderSwitchAccount(currentPhotoURL){
+    const card = $('switchAccountCard'), list = $('switchAccountList');
+    const known = getKnownAccounts();
+    if(known.length === 0){ card.style.display='none'; return; }
+    card.style.display = 'block';
+
+    list.innerHTML = known.map(a=>{
+        const isCurrent = a.uid === myUid;
+        const avatarInnerHtml = avatarInner(isCurrent ? currentPhotoURL : '', a.username || a.email);
+        return `
+            <div class="switch-account-row ${isCurrent?'current':''}" data-uid="${escapeHtml(a.uid)}">
+                <div class="switch-account-avatar">${avatarInnerHtml}</div>
+                <div class="switch-account-info">
+                    <div class="switch-account-name">${escapeHtml(a.username || 'Reader')}</div>
+                    <div class="switch-account-email">${escapeHtml(a.email||'')}</div>
+                </div>
+                ${isCurrent
+                    ? `<span class="switch-account-badge">Current</span>`
+                    : `<button class="switch-account-remove" data-remove="${escapeHtml(a.uid)}" title="Remove from this device"><i class="fas fa-times"></i></button>`}
+            </div>`;
+    }).join('');
+
+    list.querySelectorAll('.switch-account-row:not(.current)').forEach(row=>{
+        row.addEventListener('click', e=>{
+            if(e.target.closest('.switch-account-remove')) return;
+            switchToAccount(row.dataset.uid);
+        });
+    });
+    list.querySelectorAll('.switch-account-remove').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+            e.stopPropagation();
+            const known2 = getKnownAccounts().filter(a=>a.uid!==btn.dataset.remove);
+            saveKnownAccounts(known2);
+            renderSwitchAccount(currentPhotoURL);
+        });
+    });
+}
+
+function switchToAccount(uid){
+    const known = getKnownAccounts();
+    const target = known.find(a=>a.uid===uid);
+    if(!target) return;
+    localStorage.setItem(ACTIVE_SLOT_KEY, target.slot);
+    toast(`Switching to ${target.username||target.email}…`);
+    setTimeout(()=>{ window.location.href = 'account.html'; }, 500);
+}
+
+$('addAccountBtn').addEventListener('click', ()=>{
+    window.location.href = 'index.html?addAccount=1';
+});
+
 async function loadFriendRequests(){
     const reqCard = $('requestsCard'), listEl = $('requestsList');
     try{

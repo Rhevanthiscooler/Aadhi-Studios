@@ -461,48 +461,20 @@ const EMAILJS_TEMPLATE_ID = 'template_frbf3tq';
 const EMAILJS_PUBLIC_KEY  = 'ADhGKHfweInHq9eZA';
 emailjs.init(EMAILJS_PUBLIC_KEY);
 
-/* ── MULTI-ACCOUNT SWITCHING ──────────────────────────────────────────────
-   Each account you've added gets its own named Firebase app instance, which
-   Firebase persists independently in IndexedDB. "Switching" just means
-   changing which named instance THIS page treats as active — that instance
-   already has a valid signed-in session, so no password is needed again.
-   The active slot is shared (via localStorage) across every page on the
-   site, so switching on one page carries over everywhere. */
-const ACTIVE_SLOT_KEY = 'aadhi_active_slot';
-const KNOWN_ACCOUNTS_KEY = 'aadhi_known_accounts';
-const FIREBASE_CONFIG = {
+const app  = initializeApp({
     apiKey:            "AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
     authDomain:        "aadhi-studios.firebaseapp.com",
     projectId:         "aadhi-studios",
     storageBucket:     "aadhi-studios.firebasestorage.app",
     messagingSenderId: "1052163368305",
     appId:             "1:1052163368305:web:c8c51c39c271659caa42d0"
-};
-const urlParams = new URLSearchParams(location.search);
-const isAddingAccount = urlParams.get('addAccount') === '1';
-function generateSlotName(){ return 'acct_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-// Adding a new account signs in on a brand-new isolated slot so it doesn't
-// disturb whichever account is currently active elsewhere on the site.
-const activeSlot = isAddingAccount ? generateSlotName() : (localStorage.getItem(ACTIVE_SLOT_KEY) || '[DEFAULT]');
-const app  = activeSlot === '[DEFAULT]' ? initializeApp(FIREBASE_CONFIG) : initializeApp(FIREBASE_CONFIG, activeSlot);
+});
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
 // Keep people signed in across visits (closing the tab/app, restarting the
 // phone, etc.) instead of asking for the password again every time.
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
-
-// Remembers which Firebase app "slot" each account lives under, so
-// switching back to it later on account.html doesn't need a password.
-function registerKnownAccount(uid, email, username){
-    try{
-        let known = JSON.parse(localStorage.getItem(KNOWN_ACCOUNTS_KEY) || '[]');
-        known = known.filter(a=>a.uid!==uid);
-        known.push({ uid, email, username: username||'', slot: activeSlot });
-        localStorage.setItem(KNOWN_ACCOUNTS_KEY, JSON.stringify(known));
-        localStorage.setItem(ACTIVE_SLOT_KEY, activeSlot);
-    }catch{ /* localStorage unavailable — switching just won't be offered */ }
-}
 
 const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
 
@@ -732,10 +704,8 @@ async function handleSignIn(){
     try{
         await signInWithEmailAndPassword(auth, resolvedEmail, pw);
         await logAttempt(resolvedEmail,'success');
-        registerKnownAccount(auth.currentUser.uid, resolvedEmail, resolvedUsername);
         btn.innerHTML='✓ Signed in';
-        const dest = isAddingAccount ? '/Aadhi-Studios/account.html' : '/Aadhi-Studios/main.html';
-        setTimeout(()=>{ window.location.href=dest; },500);
+        setTimeout(()=>{ window.location.href='/Aadhi-Studios/main.html'; },500);
     }catch(err){
         await logAttempt(resolvedEmail,'fail',friendlyError(err.code));
         errTx.textContent=err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'?'Incorrect password. Try again.':friendlyError(err.code);
@@ -806,10 +776,8 @@ $('suVerifyBtn').addEventListener('click', async()=>{
     try{
         const cred=await createUserWithEmailAndPassword(auth,email,pw);
         await addDoc(collection(db,'users'),{ uid:cred.user.uid, username, email, dob, banUntil:null, createdAt:Date.now() });
-        registerKnownAccount(cred.user.uid, email, username);
         showSuStep(3);
-        const dest = isAddingAccount ? '/Aadhi-Studios/account.html' : '/Aadhi-Studios/main.html';
-        setTimeout(()=>{ window.location.href=dest; },2000);
+        setTimeout(()=>{ window.location.href='/Aadhi-Studios/main.html'; },2000);
     }catch(err){
         errTx.textContent=friendlyError(err.code)||'Failed to create account.';
         void errEl.offsetWidth; errEl.classList.add('show');

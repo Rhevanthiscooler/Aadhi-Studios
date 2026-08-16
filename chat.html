@@ -223,19 +223,14 @@ import {
     query, where, orderBy, getDocs, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-/* ── MULTI-ACCOUNT SWITCHING — see index.html for the full explanation.
-   This page just needs to respect whichever slot is currently active. ── */
-const ACTIVE_SLOT_KEY = 'aadhi_active_slot';
-const FIREBASE_CONFIG = {
+const app = initializeApp({
     apiKey:"AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
     authDomain:"aadhi-studios.firebaseapp.com",
     projectId:"aadhi-studios",
     storageBucket:"aadhi-studios.firebasestorage.app",
     messagingSenderId:"1052163368305",
     appId:"1:1052163368305:web:c8c51c39c271659caa42d0"
-};
-const activeSlot = localStorage.getItem(ACTIVE_SLOT_KEY) || '[DEFAULT]';
-const app = activeSlot === '[DEFAULT]' ? initializeApp(FIREBASE_CONFIG) : initializeApp(FIREBASE_CONFIG, activeSlot);
+});
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
 const db = getFirestore(app);

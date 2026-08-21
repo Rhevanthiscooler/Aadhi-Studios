@@ -259,6 +259,8 @@
     .fav-row i{color:#e0245e;font-size:14px;flex-shrink:0;}
     .fav-title{font-size:13.5px;font-weight:600;color:var(--ink);transition:color .12s;}
     .fav-desc{font-size:12px;color:var(--ink-3);margin-top:1px;}
+    .fav-more-link{color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;padding:10px 0 2px;text-align:center;}
+    .fav-more-link:hover{text-decoration:underline;}
 
     /* ── Find readers CTA ── */
     .find-readers-btn{
@@ -501,11 +503,17 @@ onAuthStateChanged(auth, async user => {
             <div id="favList"><div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div></div>
         </div>
 
+        <div class="fav-block">
+            <div class="fav-label"><i class="fas fa-book" style="color:var(--accent);margin-right:5px;"></i>My Books</div>
+            <div id="myBooksList"><div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div></div>
+        </div>
+
         <button class="account-signout-btn" id="signOutBtn"><i class="fas fa-sign-out-alt"></i> Sign out</button>
     `;
 
     $('bioEditBtn').addEventListener('click', () => renderBioEditMode(bio, myUserDocRef));
     loadFavoriteStories(favorites, 'favList');
+    loadMyBooks(user.uid, 'myBooksList');
 
     $('signOutBtn').addEventListener('click', () => {
         signOut(auth).then(() => {
@@ -609,10 +617,16 @@ async function renderOtherProfile(targetUid){
             <div id="favList"><div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div></div>
         </div>
 
+        <div class="fav-block">
+            <div class="fav-label"><i class="fas fa-book" style="color:var(--accent);margin-right:5px;"></i>My Books</div>
+            <div id="myBooksList"><div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div></div>
+        </div>
+
         <div class="profile-actions" id="profileActions"></div>
     `;
 
     loadFavoriteStories(targetFavorites, 'favList');
+    loadMyBooks(targetUid, 'myBooksList');
 
     function renderActions(html){ $('profileActions').innerHTML = html; }
 
@@ -863,6 +877,55 @@ async function loadFavoriteStories(favoriteIds, containerId){
         });
     }catch{
         el.innerHTML = `<div class="friends-empty-note">Could not load favourites.</div>`;
+    }
+}
+
+/* ══ MY BOOKS — stories this account has added, alphabetical, 6 shown by
+   default with a "More books" link to reveal the rest. ══ */
+async function loadMyBooks(uid, containerId){
+    const el = $(containerId);
+    el.innerHTML = `<div class="friends-empty-note"><i class="fas fa-spinner fa-spin"></i></div>`;
+    try{
+        const snap = await getDocs(query(collection(db,'stories'), where('ownerUid','==',uid)));
+        const myBooks = snap.docs
+            .map(d=>({id:d.id,...d.data()}))
+            .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+
+        if(myBooks.length===0){
+            el.innerHTML = `<div class="friends-empty-note">No books added yet.</div>`;
+            return;
+        }
+
+        const renderRows = (list) => list.map(s=>`
+            <div class="fav-row" data-id="${escapeHtml(s.id)}">
+                <i class="fas fa-book" style="color:var(--accent);"></i>
+                <div>
+                    <div class="fav-title">${escapeHtml(s.name||'Untitled')}</div>
+                    <div class="fav-desc">${escapeHtml(s.desc||'No synopsis')}</div>
+                </div>
+            </div>`).join('');
+
+        function wireRows(){
+            el.querySelectorAll('.fav-row').forEach(row=>{
+                row.addEventListener('click', ()=>{ window.location.href = `main.html?openStory=${encodeURIComponent(row.dataset.id)}`; });
+            });
+        }
+
+        if(myBooks.length <= 6){
+            el.innerHTML = renderRows(myBooks);
+            wireRows();
+            return;
+        }
+
+        el.innerHTML = renderRows(myBooks.slice(0,6)) +
+            `<div class="fav-more-link" id="myBooksMoreBtn">More books (${myBooks.length-6} more) →</div>`;
+        wireRows();
+        $('myBooksMoreBtn').addEventListener('click', ()=>{
+            el.innerHTML = renderRows(myBooks);
+            wireRows();
+        });
+    }catch{
+        el.innerHTML = `<div class="friends-empty-note">Could not load books.</div>`;
     }
 }
 

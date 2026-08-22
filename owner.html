@@ -150,6 +150,19 @@
     .ipban-reason { font-size:12px; color:var(--ink-3); margin-top:3px; }
     .ipban-date { font-size:11px; color:var(--ink-4); margin-top:2px; }
 
+    /* ── Admin access ── */
+    .admin-account-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--surface-3); }
+    .admin-account-row:first-child { border-top:none; }
+    .admin-account-avatar {
+        width:38px; height:38px; flex-shrink:0; border-radius:50%; overflow:hidden;
+        background:linear-gradient(135deg,var(--owner),#8a5a1f); color:#fff;
+        font-family:'Cormorant Garamond',serif; font-size:15px; font-weight:700;
+        display:flex; align-items:center; justify-content:center;
+    }
+    .admin-account-avatar img { width:100%; height:100%; object-fit:cover; }
+    .admin-account-name { font-size:14px; font-weight:600; color:var(--ink); }
+    .admin-account-email { font-size:12px; color:var(--ink-3); }
+
     /* ── CHART ── */
     .chart-wrap { padding:24px; position:relative; height:280px; }
 
@@ -320,6 +333,7 @@
         <button class="owner-tab" data-tab="tabIPBans"><i class="fas fa-ban" style="margin-right:6px;"></i>IP Bans</button>
         <button class="owner-tab" data-tab="tabBooks"><i class="fas fa-fire" style="margin-right:6px;"></i>Most Viewed</button>
         <button class="owner-tab" data-tab="tabUsers"><i class="fas fa-users" style="margin-right:6px;"></i>Users</button>
+        <button class="owner-tab" data-tab="tabAdminAccess"><i class="fas fa-user-shield" style="margin-right:6px;"></i>Admin Access</button>
         <button class="owner-tab" data-tab="tabAds"><i class="fas fa-ad" style="margin-right:6px;"></i>Ads</button>
         <button class="owner-tab" data-tab="tabComments"><i class="fas fa-comments" style="margin-right:6px;"></i>Comments</button>
         <button class="owner-tab" data-tab="tabSettings"><i class="fas fa-sliders-h" style="margin-right:6px;"></i>Settings</button>
@@ -466,6 +480,31 @@
             <div class="users-grid" id="usersGrid"></div>
             <div class="users-search-bar">
                 <input type="text" id="usersSearchInput" placeholder="Search by username or email…">
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ADMIN ACCESS ── -->
+    <div class="owner-panel" id="tabAdminAccess">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-user-shield"></i> Current Admins</span>
+                <span style="font-size:12px;color:var(--ink-4);" id="currentAdminsCount">Loading…</span>
+            </div>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:16px;line-height:1.6;">
+                These accounts can open the Admin panel from the main site (add/edit genres, stories, chapters, ads). indradamo@gmail.com and aadhi.studios.official@gmail.com always have admin access as the site owners, on top of this list.
+            </p>
+            <div id="currentAdminsList"></div>
+        </div>
+
+        <div class="card" style="margin-top:24px;">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-search"></i> Grant Admin Access</span>
+            </div>
+            <div class="users-grid-note" id="adminGrantGridNote"></div>
+            <div class="users-grid" id="adminGrantGrid"></div>
+            <div class="users-search-bar">
+                <input type="text" id="adminGrantSearchInput" placeholder="Search by username or email…">
             </div>
         </div>
     </div>
@@ -689,6 +728,8 @@ function refreshAll(){
     renderUsersTable();
     renderCommentsTab();
     renderLoginAttempts();
+    renderCurrentAdmins();
+    renderAdminGrantGrid();
 }
 
 /* ── STATS ── */
@@ -1056,6 +1097,88 @@ function renderUsersGrid(){
     }).join('');
 }
 $('usersSearchInput').addEventListener('input', e=>{ usersSearchTerm = e.target.value; renderUsersGrid(); });
+
+/* ── ADMIN ACCESS ── */
+let adminGrantSearchTerm='';
+
+window._grantAdmin = async function(userId){
+    const user = users.find(u=>u.id===userId); if(!user) return;
+    if(!confirm(`Give "${user.username||user.email}" access to the Admin panel?`)) return;
+    try{
+        await updateDoc(doc(db,'users',userId), { isAdmin:true });
+        toast(`${user.username||user.email} now has admin access.`);
+    }catch(err){
+        toast('Could not grant admin access: '+(err?.message||'unknown error'));
+    }
+};
+window._revokeAdmin = async function(userId){
+    const user = users.find(u=>u.id===userId); if(!user) return;
+    if(!confirm(`Remove admin access from "${user.username||user.email}"?`)) return;
+    try{
+        await updateDoc(doc(db,'users',userId), { isAdmin:false });
+        toast(`Admin access removed from ${user.username||user.email}.`);
+    }catch(err){
+        toast('Could not revoke admin access: '+(err?.message||'unknown error'));
+    }
+};
+
+function renderCurrentAdmins(){
+    const list = $('currentAdminsList'), countEl = $('currentAdminsCount');
+    if(!list) return;
+    const admins = users.filter(u => u.isAdmin===true && !u.deleted);
+    countEl.textContent = admins.length + (admins.length===1 ? ' admin' : ' admins');
+
+    if(admins.length===0){
+        list.innerHTML = `<div style="color:var(--ink-4);font-style:italic;font-size:13px;padding:8px 0;">No admins granted yet — use the search below to add one.</div>`;
+        return;
+    }
+    list.innerHTML = admins.map(u=>`
+        <div class="admin-account-row">
+            <div class="admin-account-avatar">${userCardAvatar(u.photoURL, u.username)}</div>
+            <div style="flex:1;min-width:0;">
+                <div class="admin-account-name">${escapeHtml(u.username||'Anonymous')}</div>
+                <div class="admin-account-email">${escapeHtml(u.email||'—')}</div>
+            </div>
+            <button class="action-btn delete" onclick="window._revokeAdmin('${u.id}')">Revoke</button>
+        </div>`).join('');
+}
+
+function renderAdminGrantGrid(){
+    const grid = $('adminGrantGrid'), note = $('adminGrantGridNote');
+    if(!grid) return;
+    const eligible = users.filter(u => !u.deleted && !OWNER_EMAILS.includes((u.email||'').toLowerCase().trim()));
+    const term = adminGrantSearchTerm.trim().toLowerCase();
+
+    if(!term){
+        note.textContent = 'Search for an account by username or email to grant them admin access.';
+        grid.innerHTML = '';
+        return;
+    }
+
+    const matches = eligible.filter(u => (u.username||'').toLowerCase().includes(term) || (u.email||'').toLowerCase().includes(term));
+    if(matches.length === 0){
+        note.textContent = '';
+        grid.innerHTML = `<div class="users-grid-note">No accounts match "${escapeHtml(adminGrantSearchTerm)}".</div>`;
+        return;
+    }
+
+    note.textContent = `${matches.length} match${matches.length===1?'':'es'} for "${adminGrantSearchTerm}"`;
+    grid.innerHTML = matches.map((user,i)=>{
+        const isAdmin = user.isAdmin===true;
+        const btn = isAdmin
+            ? `<button class="action-btn delete" onclick="window._revokeAdmin('${user.id}')">Revoke admin</button>`
+            : `<button class="action-btn unban" onclick="window._grantAdmin('${user.id}')">Grant admin</button>`;
+        return `
+            <div class="user-card" style="animation-delay:${(i*0.03).toFixed(2)}s;">
+                <div class="user-card-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
+                <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}</div>
+                <div class="user-card-email">${escapeHtml(user.email||'—')}</div>
+                ${isAdmin ? '<span class="status-badge active"><i class="fas fa-user-shield"></i> Admin</span>' : ''}
+                <div class="user-card-actions">${btn}</div>
+            </div>`;
+    }).join('');
+}
+$('adminGrantSearchInput').addEventListener('input', e=>{ adminGrantSearchTerm = e.target.value; renderAdminGrantGrid(); });
 
 /* ── ADS (oversight — enable/disable/delete only; creating a new ad still
    happens from the regular Admin panel's Ads tab) ── */

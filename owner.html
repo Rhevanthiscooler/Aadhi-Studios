@@ -210,6 +210,9 @@
     }
     .user-card-avatar img { width:100%; height:100%; object-fit:cover; }
     .user-card-username { font-size:13.5px; font-weight:700; color:var(--ink); width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .verified-badge { font-size:.8em; margin-left:4px; vertical-align:middle; }
+    .verified-badge.owner { color:#d4a017; }
+    .verified-badge.admin { color:#3b82f6; }
     .user-card-email { font-size:11.5px; color:var(--ink-3); width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .user-card-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
     .users-search-bar { margin-top:18px; padding-top:16px; border-top:1px solid var(--surface-3); display:flex; gap:8px; }
@@ -625,6 +628,12 @@ setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to defau
 
 /* ── OWNER GUARD — only indradamo@gmail.com may view this page ── */
 const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
+function verifiedBadgeHtml(email, isAdminFlag){
+    const e=(email||'').toLowerCase().trim();
+    if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;
+    if(isAdminFlag===true) return `<i class="fas fa-check-circle verified-badge admin" title="Admin"></i>`;
+    return '';
+}
 onAuthStateChanged(auth, user => {
     if (!user || !OWNER_EMAILS.includes(user.email)) {
         window.location.href = 'main.html';
@@ -846,7 +855,7 @@ function renderLoginAccountsGrid(){
     grid.innerHTML = shown.map((user,i)=>`
         <div class="user-card" style="animation-delay:${(i*0.03).toFixed(2)}s;cursor:pointer;" onclick="window._openLoginDetail('${user.id}')">
             <div class="user-card-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
-            <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}</div>
+            <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}${verifiedBadgeHtml(user.email,user.isAdmin===true)}</div>
             <div class="user-card-email">${escapeHtml(user.email||'—')}</div>
         </div>`
     ).join('');
@@ -864,7 +873,7 @@ window._openLoginDetail = function(userId){
     $('loginDetailHeader').innerHTML = `
         <div class="login-detail-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
         <div>
-            <div class="login-detail-name">${escapeHtml(user.username||'Anonymous')}</div>
+            <div class="login-detail-name">${escapeHtml(user.username||'Anonymous')}${verifiedBadgeHtml(user.email,user.isAdmin===true)}</div>
             <div class="login-detail-email">${escapeHtml(user.email||'—')}</div>
         </div>`;
 
@@ -1089,7 +1098,7 @@ function renderUsersGrid(){
         return `
             <div class="user-card" style="animation-delay:${(i*0.03).toFixed(2)}s;">
                 <div class="user-card-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
-                <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}</div>
+                <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}${verifiedBadgeHtml(user.email,user.isAdmin===true)}</div>
                 <div class="user-card-email">${escapeHtml(user.email||'—')}</div>
                 <div>${badge}</div>
                 <div class="user-card-actions">${isOwnerAccount ? '' : banBtn+deleteBtn}</div>
@@ -1136,7 +1145,7 @@ function renderCurrentAdmins(){
         <div class="admin-account-row">
             <div class="admin-account-avatar">${userCardAvatar(u.photoURL, u.username)}</div>
             <div style="flex:1;min-width:0;">
-                <div class="admin-account-name">${escapeHtml(u.username||'Anonymous')}</div>
+                <div class="admin-account-name">${escapeHtml(u.username||'Anonymous')}${verifiedBadgeHtml(u.email,u.isAdmin===true)}</div>
                 <div class="admin-account-email">${escapeHtml(u.email||'—')}</div>
             </div>
             <button class="action-btn delete" onclick="window._revokeAdmin('${u.id}')">Revoke</button>
@@ -1171,7 +1180,7 @@ function renderAdminGrantGrid(){
         return `
             <div class="user-card" style="animation-delay:${(i*0.03).toFixed(2)}s;">
                 <div class="user-card-avatar">${userCardAvatar(user.photoURL, user.username)}</div>
-                <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}</div>
+                <div class="user-card-username">${escapeHtml(user.username||'Anonymous')}${verifiedBadgeHtml(user.email,user.isAdmin===true)}</div>
                 <div class="user-card-email">${escapeHtml(user.email||'—')}</div>
                 ${isAdmin ? '<span class="status-badge active"><i class="fas fa-user-shield"></i> Admin</span>' : ''}
                 <div class="user-card-actions">${btn}</div>

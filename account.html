@@ -74,6 +74,9 @@
     .avatar-picker-option:hover{background:var(--surface-3);border-color:var(--accent);}
     .avatar-picker-option i{color:var(--accent);font-size:16px;width:18px;text-align:center;}
     .account-name{font-size:19px;font-weight:600;text-align:center;color:var(--ink);font-family:'Playfair Display',serif;}
+    .verified-badge{font-size:.8em;margin-left:5px;vertical-align:middle;}
+    .verified-badge.owner{color:#d4a017;}
+    .verified-badge.admin{color:#3b82f6;}
     .account-email{font-size:13.5px;color:var(--ink-3);text-align:center;margin-top:4px;margin-bottom:26px;}
 
     .account-row{
@@ -404,6 +407,15 @@ function toast(msg){
 const urlParams = new URLSearchParams(location.search);
 const viewUid = urlParams.get('uid');
 
+/* ── VERIFIED BADGES — gold for owners, blue for admins ── */
+const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
+function verifiedBadgeHtml(email, isAdminFlag){
+    const e=(email||'').toLowerCase().trim();
+    if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;
+    if(isAdminFlag===true) return `<i class="fas fa-check-circle verified-badge admin" title="Admin"></i>`;
+    return '';
+}
+
 $('backBtn').addEventListener('click',()=>{
     if(viewUid){ (document.referrer && document.referrer.includes(location.host)) ? history.back() : window.location.href='account.html'; }
     else window.location.href='main.html';
@@ -438,7 +450,7 @@ onAuthStateChanged(auth, async user => {
     $('findReadersBtn').style.display = 'flex';
 
     // 1) Basic profile from the 'users' collection
-    let username='Reader', dob='—', createdAt=null, bio='', photoURL='', friends=[], favorites=[];
+    let username='Reader', dob='—', createdAt=null, bio='', photoURL='', friends=[], favorites=[], isAdminFlag=false;
     try{
         const snap = await getDocs(query(collection(db,'users'), where('uid','==',user.uid)));
         if(!snap.empty){
@@ -450,6 +462,7 @@ onAuthStateChanged(auth, async user => {
             photoURL = d.photoURL || '';
             friends = d.friends || [];
             favorites = d.favorites || [];
+            isAdminFlag = d.isAdmin===true;
             myUserDocRef = snap.docs[0].ref;
         }
     }catch{ /* keep defaults */ }
@@ -479,7 +492,7 @@ onAuthStateChanged(auth, async user => {
             <div class="account-avatar" id="myAvatar">${avatarInner(photoURL, username)}</div>
             <button class="avatar-edit-btn" id="avatarEditBtn" title="Change photo"><i class="fas fa-camera"></i></button>
         </div>
-        <div class="account-name">${escapeHtml(username)}</div>
+        <div class="account-name">${escapeHtml(username)}${verifiedBadgeHtml(user.email, isAdminFlag)}</div>
         <div class="account-email">${escapeHtml(user.email||'')}</div>
 
         <div class="account-row"><span>Date of birth</span><span>${escapeHtml(dob)}</span></div>
@@ -583,7 +596,7 @@ async function renderOtherProfile(targetUid){
     if(theyBlockedMe){
         card.innerHTML = `
             <div class="account-avatar-wrap"><div class="account-avatar">${avatarInner('', username)}</div></div>
-            <div class="account-name">${escapeHtml(username)}</div>
+            <div class="account-name">${escapeHtml(username)}${verifiedBadgeHtml(target.email, target.isAdmin===true)}</div>
             <div class="account-email">This reader's profile isn't available to you.</div>`;
         return;
     }
@@ -600,7 +613,7 @@ async function renderOtherProfile(targetUid){
 
     card.innerHTML = `
         <div class="account-avatar-wrap"><div class="account-avatar">${avatarInner(photoURL, username)}</div></div>
-        <div class="account-name">${escapeHtml(username)}</div>
+        <div class="account-name">${escapeHtml(username)}${verifiedBadgeHtml(target.email, target.isAdmin===true)}</div>
 
         <div class="account-stats">
             <div class="account-stat-card"><div class="num">${booksRead}</div><div class="lbl">Books read</div></div>
@@ -834,7 +847,7 @@ async function loadFriends(friendUids){
                 return `
                     <div class="friend-chip" data-uid="${escapeHtml(fUid)}">
                         <div class="friend-chip-avatar">${avatarInner(d.photoURL, d.username)}</div>
-                        <div class="friend-chip-name">${escapeHtml(d.username||'Reader')}</div>
+                        <div class="friend-chip-name">${escapeHtml(d.username||'Reader')}${verifiedBadgeHtml(d.email, d.isAdmin===true)}</div>
                     </div>`;
             }catch{ return ''; }
         }));

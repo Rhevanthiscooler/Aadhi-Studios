@@ -81,6 +81,9 @@
     .search-result-avatar img{width:100%;height:100%;object-fit:cover;}
     .search-result-info{flex:1;min-width:0;cursor:pointer;}
     .search-result-name{font-size:14.5px;font-weight:600;color:var(--ink);}
+    .verified-badge{font-size:.8em;margin-left:4px;vertical-align:middle;}
+    .verified-badge.owner{color:#d4a017;}
+    .verified-badge.admin{color:#3b82f6;}
     .search-result-bio{font-size:12.5px;color:var(--ink-3);margin-top:3px;line-height:1.5;word-wrap:break-word;}
     .search-result-actions{flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:stretch;}
     .sr-btn{
@@ -137,6 +140,17 @@
     .msg-row.theirs .msg-bubble{background:var(--surface);color:var(--ink);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.06);}
     .msg-time{font-size:10px;color:var(--ink-4);margin-top:3px;text-align:right;}
     .msg-row.theirs .msg-time{text-align:left;}
+
+    /* ── Typing indicator ── */
+    .typing-row{display:flex;justify-content:flex-start;}
+    .typing-bubble{
+        background:var(--surface);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.06);
+        padding:11px 16px;border-radius:16px;display:flex;align-items:center;gap:4px;
+    }
+    .typing-dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3);animation:typingBounce 1.2s infinite ease-in-out;}
+    .typing-dot:nth-child(2){animation-delay:.15s;}
+    .typing-dot:nth-child(3){animation-delay:.3s;}
+    @keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-4px);opacity:1;}}
 
     .thread-input-bar{
         flex-shrink:0;display:flex;align-items:flex-end;gap:10px;padding:12px 16px;
@@ -249,6 +263,13 @@ function avatarInner(photoURL, name){
     const initial = (name||'?').trim().charAt(0).toUpperCase() || '?';
     return photoURL ? `<img src="${escapeHtml(photoURL)}" alt="">` : initial;
 }
+const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
+function verifiedBadgeHtml(email, isAdminFlag){
+    const e=(email||'').toLowerCase().trim();
+    if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;
+    if(isAdminFlag===true) return `<i class="fas fa-check-circle verified-badge admin" title="Admin"></i>`;
+    return '';
+}
 function timeAgo(ts){
     if(!ts) return '';
     const diff = Date.now() - ts;
@@ -267,12 +288,14 @@ $('backBtn').addEventListener('click', ()=>{ window.location.href='account.html'
 let myUid = null, myUsername = 'Reader', myUserDocRef = null, myFriends = [], myBlocked = [];
 let unsubMessages = null;
 let unsubInbox = null;
+let unsubTyping = null;
 
 $('tabMessages').addEventListener('click', ()=> switchTab('messages'));
 $('tabSearch').addEventListener('click', ()=> switchTab('search'));
 
 function switchTab(which){
     if(unsubMessages){ unsubMessages(); unsubMessages = null; }
+    if(unsubTyping){ unsubTyping(); unsubTyping = null; }
     $('threadView').style.display = 'none';
     $('tabMessages').classList.toggle('active', which==='messages');
     $('tabSearch').classList.toggle('active', which==='search');
@@ -348,17 +371,22 @@ function renderInbox(){
             const rows = await Promise.all(chats.map(async chat => {
                 const otherUid = (chat.participants||[]).find(u=>u!==myUid);
                 const otherName = (chat.usernames||{})[otherUid] || 'Reader';
-                let photoURL = '';
+                let photoURL = '', otherEmail = '', otherIsAdmin = false;
                 try{
                     const uSnap = await getDocs(query(collection(db,'users'), where('uid','==',otherUid)));
-                    if(!uSnap.empty) photoURL = uSnap.docs[0].data().photoURL || '';
+                    if(!uSnap.empty){
+                        const d = uSnap.docs[0].data();
+                        photoURL = d.photoURL || '';
+                        otherEmail = d.email || '';
+                        otherIsAdmin = d.isAdmin===true;
+                    }
                 }catch{ /* no photo */ }
 
                 return `
                     <div class="inbox-row" data-uid="${escapeHtml(otherUid||'')}">
                         <div class="inbox-avatar">${avatarInner(photoURL, otherName)}</div>
                         <div class="inbox-info">
-                            <div class="inbox-name">${escapeHtml(otherName)}</div>
+                            <div class="inbox-name">${escapeHtml(otherName)}${verifiedBadgeHtml(otherEmail, otherIsAdmin)}</div>
                             <div class="inbox-preview">${escapeHtml(chat.lastMessage||'')}</div>
                         </div>
                         <div class="inbox-time">${timeAgo(chat.lastMessageAt)}</div>
@@ -385,17 +413,19 @@ async function openThread(otherUid){
     $('threadView').style.display = 'flex';
     $('threadMessages').innerHTML = `<div style="text-align:center;color:var(--ink-3);padding:20px;"><i class="fas fa-spinner fa-spin"></i></div>`;
 
-    let otherUsername = 'Reader', otherPhoto = '';
+    let otherUsername = 'Reader', otherPhoto = '', otherEmail = '', otherIsAdmin = false;
     try{
         const uSnap = await getDocs(query(collection(db,'users'), where('uid','==',otherUid)));
         if(!uSnap.empty){
             const d = uSnap.docs[0].data();
             otherUsername = d.username || otherUsername;
             otherPhoto = d.photoURL || '';
+            otherEmail = d.email || '';
+            otherIsAdmin = d.isAdmin===true;
         }
     }catch{ /* keep defaults */ }
 
-    $('threadName').textContent = otherUsername;
+    $('threadName').innerHTML = `${escapeHtml(otherUsername)}${verifiedBadgeHtml(otherEmail, otherIsAdmin)}`;
     $('threadAvatar').innerHTML = avatarInner(otherPhoto, otherUsername);
 
     const chatId = sortedPairId(myUid, otherUid);
@@ -410,13 +440,26 @@ async function openThread(otherUid){
     }catch{ /* if this fails, sending below will surface the real error */ }
 
     if(unsubMessages) unsubMessages();
+    if(unsubTyping) unsubTyping();
     const messagesRef = collection(db,'chats',chatId,'messages');
+
+    let lastMessagesHtml = '';
+    let otherIsTyping = false;
+
+    function renderThread(){
+        const box = $('threadMessages');
+        const wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+        const typingHtml = otherIsTyping
+            ? `<div class="msg-row theirs typing-row"><div class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`
+            : '';
+        box.innerHTML = lastMessagesHtml + typingHtml;
+        if(wasNearBottom) box.scrollTop = box.scrollHeight;
+    }
+
     unsubMessages = onSnapshot(
         query(messagesRef, orderBy('timestamp')),
         snap => {
-            const box = $('threadMessages');
-            const wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
-            box.innerHTML = snap.docs.map(d=>{
+            lastMessagesHtml = snap.docs.map(d=>{
                 const m = d.data();
                 const mine = m.senderUid === myUid;
                 return `
@@ -426,11 +469,25 @@ async function openThread(otherUid){
                             <div class="msg-time">${timeAgo(m.timestamp)}</div>
                         </div>
                     </div>`;
-            }).join('') || `<div style="text-align:center;color:var(--ink-3);font-size:13.5px;padding:20px;">Say hello to ${escapeHtml(otherUsername)} 👋</div>`;
-            if(wasNearBottom) box.scrollTop = box.scrollHeight;
+            }).join('') || (otherIsTyping ? '' : `<div style="text-align:center;color:var(--ink-3);font-size:13.5px;padding:20px;">Say hello to ${escapeHtml(otherUsername)} 👋</div>`);
+            renderThread();
         },
         () => { $('threadMessages').innerHTML = `<div style="text-align:center;color:var(--danger,#d93025);padding:20px;">Could not load messages.</div>`; }
     );
+
+    // Live typing indicator: each side writes {typingUid, typingAt} on the
+    // chat doc while actively typing; the other side treats it as "still
+    // typing" for a few seconds, so a stalled/closed tab doesn't leave a
+    // permanent fake indicator behind.
+    const TYPING_TIMEOUT_MS = 4000;
+    unsubTyping = onSnapshot(chatRef, snap => {
+        const data = snap.data();
+        const isRecent = data && data.typingUid === otherUid && data.typingAt && (Date.now() - data.typingAt) < TYPING_TIMEOUT_MS;
+        if(isRecent !== otherIsTyping){
+            otherIsTyping = isRecent;
+            renderThread();
+        }
+    });
 
     $('threadMessages').scrollTop = $('threadMessages').scrollHeight;
 
@@ -439,10 +496,26 @@ async function openThread(otherUid){
     input.value = '';
     const sendBtn = $('sendBtn');
 
+    let typingWriteTimer = null, typingClearTimer = null;
+    function announceTyping(){
+        clearTimeout(typingClearTimer);
+        if(!typingWriteTimer){
+            setDoc(chatRef, { typingUid: myUid, typingAt: Date.now() }, { merge:true }).catch(()=>{});
+            typingWriteTimer = setTimeout(()=>{ typingWriteTimer = null; }, 1500); // throttle writes while actively typing
+        }
+        typingClearTimer = setTimeout(clearTyping, TYPING_TIMEOUT_MS);
+    }
+    function clearTyping(){
+        clearTimeout(typingWriteTimer); typingWriteTimer = null;
+        clearTimeout(typingClearTimer);
+        setDoc(chatRef, { typingUid: null, typingAt: null }, { merge:true }).catch(()=>{});
+    }
+
     async function send(){
         const text = input.value.trim();
         if(!text) return;
         sendBtn.disabled = true;
+        clearTyping();
         try{
             await addDoc(messagesRef, { senderUid:myUid, senderUsername:myUsername, text, timestamp:Date.now() });
             await setDoc(chatRef, {
@@ -460,13 +533,18 @@ async function openThread(otherUid){
     }
 
     sendBtn.onclick = send;
-    input.oninput = ()=>{ input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,100)+'px'; };
+    input.oninput = ()=>{
+        input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,100)+'px';
+        if(input.value.trim()) announceTyping(); else clearTyping();
+    };
     input.onkeydown = e=>{
         if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
     };
 
     $('threadBackBtn').onclick = ()=>{
+        clearTyping();
         if(unsubMessages){ unsubMessages(); unsubMessages=null; }
+        if(unsubTyping){ unsubTyping(); unsubTyping=null; }
         // Reflect back at the inbox URL so refreshing doesn't reopen this thread
         history.replaceState(null,'','chat.html');
         switchTab('messages');
@@ -517,7 +595,7 @@ async function buildSearchRow(u){
         return `
             <div class="search-result-row">
                 <div class="search-result-avatar">${avatarInner(u.photoURL,u.username)}</div>
-                <div class="search-result-info"><div class="search-result-name">${escapeHtml(u.username||'Reader')}</div>
+                <div class="search-result-info"><div class="search-result-name">${escapeHtml(u.username||'Reader')}${verifiedBadgeHtml(u.email,u.isAdmin===true)}</div>
                 <div class="search-result-bio">Not available.</div></div>
             </div>`;
     }
@@ -525,7 +603,7 @@ async function buildSearchRow(u){
         return `
             <div class="search-result-row" data-uid="${escapeHtml(u.uid)}">
                 <div class="search-result-avatar view-profile">${avatarInner(u.photoURL,u.username)}</div>
-                <div class="search-result-info view-profile"><div class="search-result-name">${escapeHtml(u.username||'Reader')}</div>
+                <div class="search-result-info view-profile"><div class="search-result-name">${escapeHtml(u.username||'Reader')}${verifiedBadgeHtml(u.email,u.isAdmin===true)}</div>
                 <div class="search-result-bio">${bioText}</div></div>
                 <div class="search-result-actions"><button class="sr-btn unblock-btn">Unblock</button></div>
             </div>`;
@@ -534,7 +612,7 @@ async function buildSearchRow(u){
         return `
             <div class="search-result-row" data-uid="${escapeHtml(u.uid)}">
                 <div class="search-result-avatar view-profile">${avatarInner(u.photoURL,u.username)}</div>
-                <div class="search-result-info view-profile"><div class="search-result-name">${escapeHtml(u.username||'Reader')}</div>
+                <div class="search-result-info view-profile"><div class="search-result-name">${escapeHtml(u.username||'Reader')}${verifiedBadgeHtml(u.email,u.isAdmin===true)}</div>
                 <div class="search-result-bio">${bioText}</div></div>
                 <div class="search-result-actions">
                     <button class="sr-btn primary message-btn">Message</button>
@@ -569,7 +647,7 @@ async function buildSearchRow(u){
     return `
         <div class="search-result-row" data-uid="${escapeHtml(u.uid)}" data-username="${escapeHtml(u.username||'Reader')}">
             <div class="search-result-avatar view-profile">${avatarInner(u.photoURL,u.username)}</div>
-            <div class="search-result-info view-profile"><div class="search-result-name">${escapeHtml(u.username||'Reader')}</div>
+            <div class="search-result-info view-profile"><div class="search-result-name">${escapeHtml(u.username||'Reader')}${verifiedBadgeHtml(u.email,u.isAdmin===true)}</div>
             <div class="search-result-bio">${bioText}</div></div>
             <div class="search-result-actions">${actionsHtml}</div>
         </div>`;

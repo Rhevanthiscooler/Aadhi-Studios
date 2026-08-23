@@ -371,7 +371,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signOut, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, verifyBeforeUpdateEmail, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, collection, doc, query, where, getDocs, getDoc, updateDoc, setDoc, deleteDoc, addDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, collection, doc, query, where, getDocs, getDoc, updateDoc, setDoc, deleteDoc, addDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const app  = initializeApp({
     apiKey:"AIzaSyAXYitOp20kOucSlG1p1F6NUsuTz4kfGlc",
@@ -414,6 +414,39 @@ function verifiedBadgeHtml(email, isAdminFlag){
     if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;
     if(isAdminFlag===true) return `<i class="fas fa-check-circle verified-badge admin" title="Admin"></i>`;
     return '';
+}
+
+/* ── BANNED WORDS — see owner.html's Banned Words tab. Matched as whole
+   words/phrases, case-insensitive; a hit auto-bans the account. ── */
+let bannedWordsSet = new Set();
+onSnapshot(collection(db,'bannedWords'), snap=>{
+    bannedWordsSet = new Set(snap.docs.map(d=>d.id));
+}, ()=>{ /* fail open — filter just won't catch anything */ });
+
+function findBannedWord(text){
+    if(!text || bannedWordsSet.size===0) return null;
+    const lower = text.toLowerCase();
+    for(const w of bannedWordsSet){
+        if(!w) continue;
+        try{
+            const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`, 'i');
+            if(re.test(lower)) return w;
+        }catch{ if(lower.includes(w)) return w; }
+    }
+    return null;
+}
+
+async function autoBanForBannedWord(context){
+    if(!myUserDocRef){ return; }
+    try{
+        await updateDoc(myUserDocRef, {
+            banUntil: Date.now() + 36500*86400000,
+            banReason: `Automatically banned for using a restricted word (${context}).`
+        });
+    }catch{ /* still sign out below even if the ban write fails */ }
+    toast('Your account has been banned for using a restricted word.');
+    await signOut(auth);
+    setTimeout(()=>{ window.location.href='index.html'; }, 1200);
 }
 
 $('backBtn').addEventListener('click',()=>{
@@ -963,6 +996,8 @@ function renderBioEditMode(currentBio, userDocRef){
         const newBio = textarea.value.trim();
         const btn = $('bioSaveBtn');
         if(!userDocRef){ toast('Could not find your profile record.'); return; }
+        const hit = findBannedWord(newBio);
+        if(hit){ autoBanForBannedWord('a bio'); return; }
         btn.disabled = true; btn.textContent = 'Saving…';
         try{
             await updateDoc(userDocRef, { bio: newBio });

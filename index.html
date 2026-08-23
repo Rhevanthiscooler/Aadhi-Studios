@@ -453,7 +453,7 @@
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc }
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc, onSnapshot }
     from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const EMAILJS_SERVICE_ID  = 'service_e0xrynk';
@@ -477,6 +477,27 @@ const db   = getFirestore(app);
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
 
 const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
+
+/* ── BANNED WORDS — see owner.html's Banned Words tab. Checked against the
+   username someone's trying to sign up with; since there's no account yet
+   at this point, this just rejects the sign-up rather than banning. ── */
+let bannedWordsSet = new Set();
+onSnapshot(collection(db,'bannedWords'), snap=>{
+    bannedWordsSet = new Set(snap.docs.map(d=>d.id));
+}, ()=>{ /* fail open — filter just won't catch anything */ });
+
+function findBannedWord(text){
+    if(!text || bannedWordsSet.size===0) return null;
+    const lower = text.toLowerCase();
+    for(const w of bannedWordsSet){
+        if(!w) continue;
+        try{
+            const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`, 'i');
+            if(re.test(lower)) return w;
+        }catch{ if(lower.includes(w)) return w; }
+    }
+    return null;
+}
 
 // Already signed in? Skip the sign-in form entirely and go straight to the
 // library — that's the whole point of staying signed in across visits.
@@ -773,6 +794,12 @@ $('suVerifyBtn').addEventListener('click', async()=>{
     const btn=$('suVerifyBtn');
     btn.innerHTML='<span class="btn-spinner"></span>Creating account…'; btn.disabled=true;
     const username=$('suUsername').value.trim(), email=$('suEmail').value.trim(), pw=$('suPassword').value, dob=$('suDob').value;
+    if(findBannedWord(username)){
+        errTx.textContent='That username isn\'t allowed. Please choose another.';
+        void errEl.offsetWidth; errEl.classList.add('show');
+        btn.textContent='Verify & Create Account'; btn.disabled=false;
+        return;
+    }
     try{
         const cred=await createUserWithEmailAndPassword(auth,email,pw);
         await addDoc(collection(db,'users'),{ uid:cred.user.uid, username, email, dob, banUntil:null, createdAt:Date.now() });

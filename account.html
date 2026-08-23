@@ -408,7 +408,7 @@ const urlParams = new URLSearchParams(location.search);
 const viewUid = urlParams.get('uid');
 
 /* ── VERIFIED BADGES — gold for owners, blue for admins ── */
-const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
+const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com', 'rhevanthrao@gmail.com'];
 function verifiedBadgeHtml(email, isAdminFlag){
     const e=(email||'').toLowerCase().trim();
     if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;

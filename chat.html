@@ -231,7 +231,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import {
     getFirestore, collection, doc, setDoc, addDoc, onSnapshot, updateDoc, deleteDoc,
     query, where, orderBy, getDocs, arrayUnion, arrayRemove
@@ -269,6 +269,42 @@ function verifiedBadgeHtml(email, isAdminFlag){
     if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;
     if(isAdminFlag===true) return `<i class="fas fa-check-circle verified-badge admin" title="Admin"></i>`;
     return '';
+}
+
+/* ── BANNED WORDS — see owner.html's Banned Words tab. Matched as whole
+   words/phrases, case-insensitive; a hit auto-bans the sender. ── */
+let bannedWordsSet = new Set();
+onSnapshot(collection(db,'bannedWords'), snap=>{
+    bannedWordsSet = new Set(snap.docs.map(d=>d.id));
+}, ()=>{ /* fail open — filter just won't catch anything */ });
+
+function findBannedWord(text){
+    if(!text || bannedWordsSet.size===0) return null;
+    const lower = text.toLowerCase();
+    for(const w of bannedWordsSet){
+        if(!w) continue;
+        try{
+            const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`, 'i');
+            if(re.test(lower)) return w;
+        }catch{ if(lower.includes(w)) return w; }
+    }
+    return null;
+}
+
+async function autoBanForBannedWord(context){
+    if(!myUid) return;
+    try{
+        const snap = await getDocs(query(collection(db,'users'), where('uid','==',myUid)));
+        if(!snap.empty){
+            await updateDoc(snap.docs[0].ref, {
+                banUntil: Date.now() + 36500*86400000,
+                banReason: `Automatically banned for using a restricted word (${context}).`
+            });
+        }
+    }catch{ /* still sign out below even if the ban write fails */ }
+    toast('Your account has been banned for using a restricted word.');
+    await signOut(auth);
+    setTimeout(()=>{ window.location.href='index.html'; }, 1200);
 }
 function timeAgo(ts){
     if(!ts) return '';
@@ -514,6 +550,8 @@ async function openThread(otherUid){
     async function send(){
         const text = input.value.trim();
         if(!text) return;
+        const hit = findBannedWord(text);
+        if(hit){ input.value=''; autoBanForBannedWord('a chat message'); return; }
         sendBtn.disabled = true;
         clearTyping();
         try{

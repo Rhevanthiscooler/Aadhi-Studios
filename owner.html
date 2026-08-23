@@ -150,6 +150,11 @@
     .ipban-reason { font-size:12px; color:var(--ink-3); margin-top:3px; }
     .ipban-date { font-size:11px; color:var(--ink-4); margin-top:2px; }
 
+    /* ── Banned words ── */
+    .bword-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; border-top:1px solid var(--surface-3); }
+    .bword-row:first-child { border-top:none; }
+    .bword-text { font-family:monospace; font-size:14.5px; font-weight:700; color:var(--ink); }
+
     /* ── Admin access ── */
     .admin-account-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--surface-3); }
     .admin-account-row:first-child { border-top:none; }
@@ -334,6 +339,7 @@
         <button class="owner-tab active" data-tab="tabOverview"><i class="fas fa-chart-line" style="margin-right:6px;"></i>Overview</button>
         <button class="owner-tab" data-tab="tabLogins"><i class="fas fa-shield-alt" style="margin-right:6px;"></i>Login Attempts</button>
         <button class="owner-tab" data-tab="tabIPBans"><i class="fas fa-ban" style="margin-right:6px;"></i>IP Bans</button>
+        <button class="owner-tab" data-tab="tabBannedWords"><i class="fas fa-comment-slash" style="margin-right:6px;"></i>Banned Words</button>
         <button class="owner-tab" data-tab="tabBooks"><i class="fas fa-fire" style="margin-right:6px;"></i>Most Viewed</button>
         <button class="owner-tab" data-tab="tabUsers"><i class="fas fa-users" style="margin-right:6px;"></i>Users</button>
         <button class="owner-tab" data-tab="tabAdminAccess"><i class="fas fa-user-shield" style="margin-right:6px;"></i>Admin Access</button>
@@ -453,6 +459,31 @@
                 <span style="font-size:12px;color:var(--ink-4);" id="ipBansCount">Loading…</span>
             </div>
             <div id="ipBansList"></div>
+        </div>
+    </div>
+
+    <!-- ── BANNED WORDS ── -->
+    <div class="owner-panel" id="tabBannedWords">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-comment-slash"></i> Add a banned word</span>
+            </div>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:18px;line-height:1.6;">
+                If anyone types this word into a comment, chat message, bio, or story/chapter they're adding, it gets blocked automatically and their account is instantly banned. Checked as a whole word, not as part of other words — case doesn't matter.
+            </p>
+            <div class="modal-field" style="max-width:320px;">
+                <label>Word or phrase</label>
+                <input type="text" id="banWordInput" placeholder="e.g. some-word">
+            </div>
+            <button class="action-btn delete" id="addBannedWordBtn" style="padding:9px 18px;font-size:13px;">Ban this word</button>
+        </div>
+
+        <div class="card" style="margin-top:24px;">
+            <div class="card-head">
+                <span class="card-head-title"><i class="fas fa-list"></i> Banned Words</span>
+                <span style="font-size:12px;color:var(--ink-4);" id="bannedWordsCount">Loading…</span>
+            </div>
+            <div id="bannedWordsList"></div>
         </div>
     </div>
 
@@ -708,7 +739,7 @@ $('banModalClose').addEventListener('click', ()=>closeModal('banModal'));
    LIVE DATA
 ═══════════════════════════════════ */
 
-let users=[], stories=[], genres=[], parts=[], comments=[], loginAttempts=[], siteConfig={}, ads=[], bannedIPs=[];
+let users=[], stories=[], genres=[], parts=[], comments=[], loginAttempts=[], siteConfig={}, ads=[], bannedIPs=[], bannedWords=[];
 let banTargetUserId = null;
 let banType = 'days';
 let userChart = null;
@@ -723,6 +754,7 @@ function startOwnerDataListeners(){
     onSnapshot(collection(db,'ads'),     snap=>{ ads     = snap.docs.map(d=>({id:d.id,...d.data()})); renderAdsTab(); });
     onSnapshot(collection(db,'loginAttempts'), snap=>{ loginAttempts = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); renderLoginAttempts(); });
     onSnapshot(collection(db,'bannedIPs'), snap=>{ bannedIPs = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.bannedAt||0)-(a.bannedAt||0)); renderIPBans(); });
+    onSnapshot(collection(db,'bannedWords'), snap=>{ bannedWords = snap.docs.map(d=>d.data()).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)); renderBannedWords(); });
     onSnapshot(doc(db,'config','site'), snap=>{
         if(snap.exists()){ siteConfig = snap.data(); }
         else { siteConfig = { maintenance: false }; }
@@ -1008,6 +1040,51 @@ function renderIPBans(){
                     ${dateStr ? `<div class="ipban-date">Banned ${dateStr}</div>` : ''}
                 </div>
                 <button class="action-btn unban" onclick="window._unbanIP('${escapeHtml(b.id)}')">Unban</button>
+            </div>`;
+    }).join('');
+}
+
+/* ── BANNED WORDS — stored as users/{word} docs in 'bannedWords', doc ID
+   is the lowercased word itself so duplicates can't happen by accident. ── */
+$('addBannedWordBtn').addEventListener('click', async ()=>{
+    const raw = $('banWordInput').value.trim();
+    if(!raw){ toast('Enter a word first.'); return; }
+    const word = raw.toLowerCase();
+    try{
+        await setDoc(doc(db,'bannedWords',word), { word, addedAt: Date.now() });
+        toast(`"${word}" is now banned site-wide.`);
+        $('banWordInput').value='';
+    }catch(err){
+        toast('Could not save that word: '+(err?.message||'unknown error'));
+    }
+});
+
+window._unbanWord = async function(word){
+    try{
+        await deleteDoc(doc(db,'bannedWords',word));
+        toast(`"${word}" has been removed from the banned list.`);
+    }catch(err){
+        toast('Could not remove that word: '+(err?.message||'unknown error'));
+    }
+};
+
+function renderBannedWords(){
+    const list = $('bannedWordsList'), countEl = $('bannedWordsCount');
+    if(!list) return;
+    countEl.textContent = bannedWords.length + (bannedWords.length===1 ? ' word banned' : ' words banned');
+    if(bannedWords.length===0){
+        list.innerHTML = `<div style="color:var(--ink-4);font-style:italic;font-size:13px;padding:8px 0;">No words banned yet.</div>`;
+        return;
+    }
+    list.innerHTML = bannedWords.map(b=>{
+        const dateStr = b.addedAt ? new Date(b.addedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+        return `
+            <div class="bword-row">
+                <div>
+                    <div class="bword-text">${escapeHtml(b.word)}</div>
+                    ${dateStr ? `<div class="ipban-date">Banned ${dateStr}</div>` : ''}
+                </div>
+                <button class="action-btn unban" onclick="window._unbanWord('${escapeHtml(b.word)}')">Remove</button>
             </div>`;
     }).join('');
 }

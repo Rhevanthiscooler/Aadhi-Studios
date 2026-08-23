@@ -423,15 +423,36 @@ onSnapshot(collection(db,'bannedWords'), snap=>{
     bannedWordsSet = new Set(snap.docs.map(d=>d.id));
 }, ()=>{ /* fail open — filter just won't catch anything */ });
 
+/* Collapses spacing/punctuation and common leetspeak substitutions so
+   "b a d w o r d", "b-a-d-w-o-r-d", and "b4dw0rd" all still get caught,
+   not just the literal spelled-out word. No filter is unbeatable, but this
+   covers the casual evasion attempts. */
+function normalizeForFilter(text){
+    return text
+        .toLowerCase()
+        .replace(/[@4]/g,'a')
+        .replace(/3/g,'e')
+        .replace(/[1!|]/g,'i')
+        .replace(/0/g,'o')
+        .replace(/[5$]/g,'s')
+        .replace(/7/g,'t')
+        .replace(/[^a-z0-9]/g,'');
+}
 function findBannedWord(text){
     if(!text || bannedWordsSet.size===0) return null;
     const lower = text.toLowerCase();
+    const collapsed = normalizeForFilter(text);
     for(const w of bannedWordsSet){
         if(!w) continue;
         try{
             const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`, 'i');
             if(re.test(lower)) return w;
         }catch{ if(lower.includes(w)) return w; }
+        // Only run the aggressive collapsed check for words 4+ characters —
+        // shorter banned words risk false-positiving on unrelated longer
+        // words once spacing/punctuation is stripped out.
+        const collapsedWord = normalizeForFilter(w);
+        if(collapsedWord.length>=4 && collapsed.includes(collapsedWord)) return w;
     }
     return null;
 }

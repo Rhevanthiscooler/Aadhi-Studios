@@ -476,7 +476,7 @@ const db   = getFirestore(app);
 // phone, etc.) instead of asking for the password again every time.
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
 
-const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com', 'rhevanthrao@gmail.com'];
+const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
 
 /* ── BANNED WORDS — see owner.html's Banned Words tab. Checked against the
    username someone's trying to sign up with; since there's no account yet

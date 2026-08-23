@@ -658,7 +658,7 @@ const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(()=>{ /* falls back to default persistence */ });
 
 /* ── OWNER GUARD — only indradamo@gmail.com may view this page ── */
-const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com'];
+const OWNER_EMAILS = ['indradamo@gmail.com', 'aadhi.studios.official@gmail.com', 'rhevanthrao@gmail.com'];
 function verifiedBadgeHtml(email, isAdminFlag){
     const e=(email||'').toLowerCase().trim();
     if(OWNER_EMAILS.includes(e)) return `<i class="fas fa-check-circle verified-badge owner" title="Site owner"></i>`;
